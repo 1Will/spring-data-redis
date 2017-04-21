@@ -37,16 +37,12 @@ import org.springframework.util.ObjectUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterStringCommands implements RedisStringCommands {
+class JedisClusterStringCommands implements RedisStringCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterStringCommands(JedisClusterConnection jedisClusterConnection) {
 		this.connection = jedisClusterConnection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -370,6 +366,10 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisStringCommands#getBit(byte[], long)
+	 */
 	@Override
 	public Boolean getBit(byte[] key, long offset) {
 
@@ -380,6 +380,10 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisStringCommands#setBit(byte[], long, boolean)
+	 */
 	@Override
 	public Boolean setBit(byte[] key, long offset, boolean value) {
 
@@ -390,6 +394,10 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisStringCommands#bitCount(byte[])
+	 */
 	@Override
 	public Long bitCount(byte[] key) {
 
@@ -400,6 +408,10 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisStringCommands#bitCount(byte[], long, long)
+	 */
 	@Override
 	public Long bitCount(byte[] key, long begin, long end) {
 
@@ -410,6 +422,10 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisStringCommands#bitOp(org.springframework.data.redis.connection.RedisStringCommands.BitOperation, byte[], byte[][])
+	 */
 	@Override
 	public Long bitOp(BitOperation op, byte[] destination, byte[]... keys) {
 
@@ -439,4 +455,9 @@ public class JedisClusterStringCommands implements RedisStringCommands {
 			throw convertJedisAccessException(ex);
 		}
 	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
+	}
+
 }

@@ -30,40 +30,12 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceHyperLogLogCommands implements RedisHyperLogLogCommands {
+class LettuceHyperLogLogCommands implements RedisHyperLogLogCommands {
 
 	private final LettuceConnection connection;
 
 	public LettuceHyperLogLogCommands(LettuceConnection connection) {
 		this.connection = connection;
-	}
-
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void pipeline(LettuceResult result) {
-		connection.pipeline(result);
-	}
-
-	private void transaction(LettuceTxResult result) {
-		connection.transaction(result);
-	}
-
-	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
-		return connection.getAsyncConnection();
-	}
-
-	public RedisClusterCommands<byte[], byte[]> getConnection() {
-		return connection.getConnection();
-	}
-
-	protected DataAccessException convertLettuceAccessException(Exception ex) {
-		return connection.convertLettuceAccessException(ex);
 	}
 
 	/*
@@ -153,5 +125,33 @@ public class LettuceHyperLogLogCommands implements RedisHyperLogLogCommands {
 		} catch (Exception ex) {
 			throw convertLettuceAccessException(ex);
 		}
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void pipeline(LettuceResult result) {
+		connection.pipeline(result);
+	}
+
+	private void transaction(LettuceTxResult result) {
+		connection.transaction(result);
+	}
+
+	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
+		return connection.getAsyncConnection();
+	}
+
+	public RedisClusterCommands<byte[], byte[]> getConnection() {
+		return connection.getConnection();
+	}
+
+	protected DataAccessException convertLettuceAccessException(Exception ex) {
+		return connection.convertLettuceAccessException(ex);
 	}
 }

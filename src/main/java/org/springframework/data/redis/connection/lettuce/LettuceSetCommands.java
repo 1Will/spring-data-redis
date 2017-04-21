@@ -37,7 +37,7 @@ import org.springframework.data.redis.core.ScanOptions;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceSetCommands implements RedisSetCommands {
+class LettuceSetCommands implements RedisSetCommands {
 
 	private final LettuceConnection connection;
 
@@ -45,34 +45,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void pipeline(LettuceResult result) {
-		connection.pipeline(result);
-	}
-
-	private void transaction(LettuceTxResult result) {
-		connection.transaction(result);
-	}
-
-	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
-		return connection.getAsyncConnection();
-	}
-
-	public RedisClusterCommands<byte[], byte[]> getConnection() {
-		return connection.getConnection();
-	}
-
-	private DataAccessException convertLettuceAccessException(Exception ex) {
-		return connection.convertLettuceAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sAdd(byte[], byte[][])
+	 */
+	@Override
 	public Long sAdd(byte[] key, byte[]... values) {
 		try {
 			if (isPipelined()) {
@@ -89,6 +66,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sCard(byte[])
+	 */
+	@Override
 	public Long sCard(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -105,6 +87,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sDiff(byte[][])
+	 */
+	@Override
 	public Set<byte[]> sDiff(byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -121,6 +108,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sDiffStore(byte[], byte[][])
+	 */
+	@Override
 	public Long sDiffStore(byte[] destKey, byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -137,6 +129,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sInter(byte[][])
+	 */
+	@Override
 	public Set<byte[]> sInter(byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -153,6 +150,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sInterStore(byte[], byte[][])
+	 */
+	@Override
 	public Long sInterStore(byte[] destKey, byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -169,6 +171,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sIsMember(byte[], byte[])
+	 */
+	@Override
 	public Boolean sIsMember(byte[] key, byte[] value) {
 		try {
 			if (isPipelined()) {
@@ -185,6 +192,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sMembers(byte[])
+	 */
+	@Override
 	public Set<byte[]> sMembers(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -201,6 +213,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sMove(byte[], byte[], byte[])
+	 */
+	@Override
 	public Boolean sMove(byte[] srcKey, byte[] destKey, byte[] value) {
 		try {
 			if (isPipelined()) {
@@ -217,6 +234,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sPop(byte[])
+	 */
+	@Override
 	public byte[] sPop(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -233,6 +255,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sRandMember(byte[])
+	 */
+	@Override
 	public byte[] sRandMember(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -249,6 +276,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sRandMember(byte[], long)
+	 */
+	@Override
 	public List<byte[]> sRandMember(byte[] key, long count) {
 		try {
 			if (isPipelined()) {
@@ -267,6 +299,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sRem(byte[], byte[][])
+	 */
+	@Override
 	public Long sRem(byte[] key, byte[]... values) {
 		try {
 			if (isPipelined()) {
@@ -283,6 +320,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sUnion(byte[][])
+	 */
+	@Override
 	public Set<byte[]> sUnion(byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -299,6 +341,11 @@ public class LettuceSetCommands implements RedisSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisSetCommands#sUnionStore(byte[], byte[][])
+	 */
+	@Override
 	public Long sUnionStore(byte[] destKey, byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -357,6 +404,34 @@ public class LettuceSetCommands implements RedisSetCommands {
 			}
 
 		}.open();
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void pipeline(LettuceResult result) {
+		connection.pipeline(result);
+	}
+
+	private void transaction(LettuceTxResult result) {
+		connection.transaction(result);
+	}
+
+	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
+		return connection.getAsyncConnection();
+	}
+
+	public RedisClusterCommands<byte[], byte[]> getConnection() {
+		return connection.getConnection();
+	}
+
+	private DataAccessException convertLettuceAccessException(Exception ex) {
+		return connection.convertLettuceAccessException(ex);
 	}
 
 }

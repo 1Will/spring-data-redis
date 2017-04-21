@@ -42,7 +42,7 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceKeyCommands implements RedisKeyCommands {
+class LettuceKeyCommands implements RedisKeyCommands {
 
 	private final LettuceConnection connection;
 
@@ -50,34 +50,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void pipeline(LettuceResult result) {
-		connection.pipeline(result);
-	}
-
-	private void transaction(LettuceTxResult result) {
-		connection.transaction(result);
-	}
-
-	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
-		return connection.getAsyncConnection();
-	}
-
-	public RedisClusterCommands<byte[], byte[]> getConnection() {
-		return connection.getConnection();
-	}
-
-	private DataAccessException convertLettuceAccessException(Exception ex) {
-		return connection.convertLettuceAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#dump(byte[])
+	 */
+	@Override
 	public byte[] dump(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -94,6 +71,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#restore(byte[], long, byte[])
+	 */
+	@Override
 	public void restore(byte[] key, long ttlInMillis, byte[] serializedValue) {
 		try {
 			if (isPipelined()) {
@@ -110,6 +92,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#keys(byte[])
+	 */
+	@Override
 	public Set<byte[]> keys(byte[] pattern) {
 		try {
 			if (isPipelined()) {
@@ -128,6 +115,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#exists(byte[])
+	 */
+	@Override
 	public Boolean exists(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -146,6 +138,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#expire(byte[], long)
+	 */
+	@Override
 	public Boolean expire(byte[] key, long seconds) {
 		try {
 			if (isPipelined()) {
@@ -162,6 +159,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#expireAt(byte[], long)
+	 */
+	@Override
 	public Boolean expireAt(byte[] key, long unixTime) {
 		try {
 			if (isPipelined()) {
@@ -178,6 +180,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pExpire(byte[], long)
+	 */
+	@Override
 	public Boolean pExpire(byte[] key, long millis) {
 		try {
 			if (isPipelined()) {
@@ -194,6 +201,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pExpireAt(byte[], long)
+	 */
+	@Override
 	public Boolean pExpireAt(byte[] key, long unixTimeInMillis) {
 		try {
 			if (isPipelined()) {
@@ -262,6 +274,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#del(byte[][])
+	 */
+	@Override
 	public Long del(byte[]... keys) {
 		try {
 			if (isPipelined()) {
@@ -278,6 +295,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters)
+	 */
+	@Override
 	public List<byte[]> sort(byte[] key, SortParameters params) {
 
 		SortArgs args = LettuceConverters.toSortArgs(params);
@@ -297,6 +319,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters, byte[])
+	 */
+	@Override
 	public Long sort(byte[] key, SortParameters params, byte[] sortKey) {
 
 		SortArgs args = LettuceConverters.toSortArgs(params);
@@ -316,6 +343,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#persist(byte[])
+	 */
+	@Override
 	public Boolean persist(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -332,6 +364,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#move(byte[], int)
+	 */
+	@Override
 	public Boolean move(byte[] key, int dbIndex) {
 		try {
 			if (isPipelined()) {
@@ -348,6 +385,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#randomKey()
+	 */
+	@Override
 	public byte[] randomKey() {
 		try {
 			if (isPipelined()) {
@@ -364,6 +406,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#rename(byte[], byte[])
+	 */
+	@Override
 	public void rename(byte[] oldName, byte[] newName) {
 		try {
 			if (isPipelined()) {
@@ -380,6 +427,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#renameNX(byte[], byte[])
+	 */
+	@Override
 	public Boolean renameNX(byte[] oldName, byte[] newName) {
 		try {
 			if (isPipelined()) {
@@ -446,6 +498,11 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#type(byte[])
+	 */
+	@Override
 	public DataType type(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -474,6 +531,7 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisKeyCommands#scan(org.springframework.data.redis.core.ScanOptions)
 	 */
+	@Override
 	public Cursor<byte[]> scan(ScanOptions options) {
 		return scan(0, options != null ? options : ScanOptions.NONE);
 	}
@@ -513,6 +571,34 @@ public class LettuceKeyCommands implements RedisKeyCommands {
 
 		}.open();
 
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void pipeline(LettuceResult result) {
+		connection.pipeline(result);
+	}
+
+	private void transaction(LettuceTxResult result) {
+		connection.transaction(result);
+	}
+
+	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
+		return connection.getAsyncConnection();
+	}
+
+	public RedisClusterCommands<byte[], byte[]> getConnection() {
+		return connection.getConnection();
+	}
+
+	private DataAccessException convertLettuceAccessException(Exception ex) {
+		return connection.convertLettuceAccessException(ex);
 	}
 
 }

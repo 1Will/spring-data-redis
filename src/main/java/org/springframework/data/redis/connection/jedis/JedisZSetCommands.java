@@ -36,7 +36,7 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisZSetCommands implements RedisZSetCommands {
+class JedisZSetCommands implements RedisZSetCommands {
 
 	private final JedisConnection connection;
 
@@ -44,26 +44,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private void pipeline(JedisResult result) {
-		connection.pipeline(result);
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void transaction(JedisResult result) {
-		connection.transaction(result);
-	}
-
-	private RuntimeException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zAdd(byte[], double, byte[])
+	 */
+	@Override
 	public Boolean zAdd(byte[] key, double score, byte[] value) {
 
 		try {
@@ -83,6 +68,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zAdd(byte[], java.util.Set)
+	 */
+	@Override
 	public Long zAdd(byte[] key, Set<Tuple> tuples) {
 
 		if (isPipelined() || isQueueing()) {
@@ -97,6 +87,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zCard(byte[])
+	 */
+	@Override
 	public Long zCard(byte[] key) {
 
 		try {
@@ -114,6 +109,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zCount(byte[], double, double)
+	 */
+	@Override
 	public Long zCount(byte[] key, double min, double max) {
 
 		try {
@@ -149,6 +149,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		return connection.getJedis().zcount(key, min, max);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zIncrBy(byte[], double, byte[])
+	 */
+	@Override
 	public Double zIncrBy(byte[] key, double increment, byte[] value) {
 
 		try {
@@ -166,6 +171,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zInterStore(byte[], org.springframework.data.redis.connection.RedisZSetCommands.Aggregate, int[], byte[][])
+	 */
+	@Override
 	public Long zInterStore(byte[] destKey, Aggregate aggregate, int[] weights, byte[]... sets) {
 
 		try {
@@ -185,6 +195,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zInterStore(byte[], byte[][])
+	 */
+	@Override
 	public Long zInterStore(byte[] destKey, byte[]... sets) {
 
 		try {
@@ -202,6 +217,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRange(byte[], long, long)
+	 */
+	@Override
 	public Set<byte[]> zRange(byte[] key, long start, long end) {
 
 		try {
@@ -219,6 +239,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRangeWithScores(byte[], long, long)
+	 */
+	@Override
 	public Set<Tuple> zRangeWithScores(byte[] key, long start, long end) {
 
 		try {
@@ -368,6 +393,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRevRangeWithScores(byte[], long, long)
+	 */
+	@Override
 	public Set<Tuple> zRevRangeWithScores(byte[] key, long start, long end) {
 
 		try {
@@ -476,6 +506,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRank(byte[], byte[])
+	 */
+	@Override
 	public Long zRank(byte[] key, byte[] value) {
 
 		try {
@@ -493,6 +528,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRem(byte[], byte[][])
+	 */
+	@Override
 	public Long zRem(byte[] key, byte[]... values) {
 
 		try {
@@ -510,6 +550,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRemRange(byte[], long, long)
+	 */
+	@Override
 	public Long zRemRange(byte[] key, long start, long end) {
 
 		try {
@@ -554,6 +599,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRevRange(byte[], long, long)
+	 */
+	@Override
 	public Set<byte[]> zRevRange(byte[] key, long start, long end) {
 
 		try {
@@ -571,6 +621,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRevRank(byte[], byte[])
+	 */
+	@Override
 	public Long zRevRank(byte[] key, byte[] value) {
 
 		try {
@@ -588,6 +643,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zScore(byte[], byte[])
+	 */
+	@Override
 	public Double zScore(byte[] key, byte[] value) {
 
 		try {
@@ -605,6 +665,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zUnionStore(byte[], org.springframework.data.redis.connection.RedisZSetCommands.Aggregate, int[], byte[][])
+	 */
+	@Override
 	public Long zUnionStore(byte[] destKey, Aggregate aggregate, int[] weights, byte[]... sets) {
 
 		try {
@@ -624,6 +689,11 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zUnionStore(byte[], byte[][])
+	 */
+	@Override
 	public Long zUnionStore(byte[] destKey, byte[]... sets) {
 
 		try {
@@ -683,6 +753,10 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}.open();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRangeByScore(byte[], java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Set<byte[]> zRangeByScore(byte[] key, String min, String max) {
 
@@ -702,6 +776,10 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zRangeByScore(byte[], java.lang.String, java.lang.String, long, long)
+	 */
 	@Override
 	public Set<byte[]> zRangeByScore(byte[] key, String min, String max, long offset, long count) {
 
@@ -751,5 +829,25 @@ public class JedisZSetCommands implements RedisZSetCommands {
 		}
 
 		return args;
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private void pipeline(JedisResult result) {
+		connection.pipeline(result);
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void transaction(JedisResult result) {
+		connection.transaction(result);
+	}
+
+	private RuntimeException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

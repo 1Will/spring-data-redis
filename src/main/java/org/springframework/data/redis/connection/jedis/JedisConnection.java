@@ -25,9 +25,6 @@ import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Protocol.Command;
 import redis.clients.jedis.Queable;
 import redis.clients.jedis.Response;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.ScanResult;
-import redis.clients.jedis.SortingParams;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.util.Pool;
@@ -38,11 +35,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.dao.DataAccessException;
@@ -65,14 +59,8 @@ import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.connection.convert.TransactionResultConverter;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.KeyBoundCursor;
-import org.springframework.data.redis.core.ScanCursor;
-import org.springframework.data.redis.core.ScanIteration;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -236,7 +224,84 @@ public class JedisConnection extends AbstractRedisConnection {
 
 		return exception;
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#keyCommands()
+	 */
+	@Override
+	public RedisKeyCommands keyCommands() {
+		return new JedisKeyCommands(this);
+	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#stringCommands()
+	 */
+	@Override
+	public RedisStringCommands stringCommands() {
+		return new JedisStringCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#listCommands()
+	 */
+	@Override
+	public RedisListCommands listCommands() {
+		return new JedisListCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#setCommands()
+	 */
+	@Override
+	public RedisSetCommands setCommands() {
+		return new JedisSetCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#zSetCommands()
+	 */
+	@Override
+	public RedisZSetCommands zSetCommands() {
+		return new JedisZSetCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hashCommands()
+	 */
+	@Override
+	public RedisHashCommands hashCommands() {
+		return new JedisHashCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#geoCommands()
+	 */
+	@Override
+	public RedisGeoCommands geoCommands() {
+		return new JedisGeoCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hyperLogLogCommands()
+	 */
+	@Override
+	public RedisHyperLogLogCommands hyperLogLogCommands() {
+		return new JedisHyperLogLogCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisCommands#execute(java.lang.String, byte[][])
+	 */
+	@Override
 	public Object execute(String command, byte[]... args) {
 		Assert.hasText(command, "a valid command needs to be specified");
 		try {
@@ -273,6 +338,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.AbstractRedisConnection#close()
+	 */
+	@Override
 	public void close() throws DataAccessException {
 		super.close();
 		// return the connection to the pool
@@ -328,10 +398,20 @@ public class JedisConnection extends AbstractRedisConnection {
 			throw convertJedisAccessException(exc);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#getNativeConnection()
+	 */
+	@Override
 	public Jedis getNativeConnection() {
 		return jedis;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#isClosed()
+	 */
+	@Override
 	public boolean isClosed() {
 		try {
 			return !jedis.isConnected();
@@ -340,20 +420,40 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#isQueueing()
+	 */
+	@Override
 	public boolean isQueueing() {
 		return client.isInMulti();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#isPipelined()
+	 */
+	@Override
 	public boolean isPipelined() {
 		return (pipeline != null);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#openPipeline()
+	 */
+	@Override
 	public void openPipeline() {
 		if (pipeline == null) {
 			pipeline = jedis.pipelined();
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#closePipeline()
+	 */
+	@Override
 	public List<Object> closePipeline() {
 		if (pipeline != null) {
 			try {
@@ -395,10 +495,6 @@ public class JedisConnection extends AbstractRedisConnection {
 		return results;
 	}
 
-	private void doPipelined(Response<?> response) {
-		pipeline(new JedisStatusResult(response));
-	}
-
 	void pipeline(FutureResult<Response<?>> result) {
 		if (isQueueing()) {
 			transaction(result);
@@ -407,72 +503,15 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
-	private void doQueued(Response<?> response) {
-		transaction(new JedisStatusResult(response));
-	}
-
 	void transaction(FutureResult<Response<?>> result) {
 		txResults.add(result);
 	}
 
-	public List<byte[]> sort(byte[] key, SortParameters params) {
-
-		SortingParams sortParams = JedisConverters.toSortingParams(params);
-
-		try {
-			if (isPipelined()) {
-				if (sortParams != null) {
-					pipeline(new JedisResult(pipeline.sort(key, sortParams)));
-				} else {
-					pipeline(new JedisResult(pipeline.sort(key)));
-				}
-
-				return null;
-			}
-			if (isQueueing()) {
-				if (sortParams != null) {
-					transaction(new JedisResult(transaction.sort(key, sortParams)));
-				} else {
-					transaction(new JedisResult(transaction.sort(key)));
-				}
-
-				return null;
-			}
-			return (sortParams != null ? jedis.sort(key, sortParams) : jedis.sort(key));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	public Long sort(byte[] key, SortParameters params, byte[] storeKey) {
-
-		SortingParams sortParams = JedisConverters.toSortingParams(params);
-
-		try {
-			if (isPipelined()) {
-				if (sortParams != null) {
-					pipeline(new JedisResult(pipeline.sort(key, sortParams, storeKey)));
-				} else {
-					pipeline(new JedisResult(pipeline.sort(key, storeKey)));
-				}
-
-				return null;
-			}
-			if (isQueueing()) {
-				if (sortParams != null) {
-					transaction(new JedisResult(transaction.sort(key, sortParams, storeKey)));
-				} else {
-					transaction(new JedisResult(transaction.sort(key, storeKey)));
-				}
-
-				return null;
-			}
-			return (sortParams != null ? jedis.sort(key, sortParams, storeKey) : jedis.sort(key, storeKey));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#dbSize()
+	 */
+	@Override
 	public Long dbSize() {
 		try {
 			if (isPipelined()) {
@@ -489,6 +528,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushDb()
+	 */
+	@Override
 	public void flushDb() {
 		try {
 			if (isPipelined()) {
@@ -505,6 +549,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushAll()
+	 */
+	@Override
 	public void flushAll() {
 		try {
 			if (isPipelined()) {
@@ -521,6 +570,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgSave()
+	 */
+	@Override
 	public void bgSave() {
 		try {
 			if (isPipelined()) {
@@ -537,6 +591,10 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgReWriteAof()
+	 */
 	@Override
 	public void bgReWriteAof() {
 		try {
@@ -562,6 +620,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		bgReWriteAof();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#save()
+	 */
+	@Override
 	public void save() {
 		try {
 			if (isPipelined()) {
@@ -578,6 +641,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#getConfig(java.lang.String)
+	 */
+	@Override
 	public List<String> getConfig(String param) {
 		try {
 			if (isPipelined()) {
@@ -594,6 +662,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#info()
+	 */
+	@Override
 	public Properties info() {
 		try {
 			if (isPipelined()) {
@@ -610,6 +683,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#info(java.lang.String)
+	 */
+	@Override
 	public Properties info(String section) {
 		if (isPipelined()) {
 			throw new UnsupportedOperationException();
@@ -624,6 +702,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#lastSave()
+	 */
+	@Override
 	public Long lastSave() {
 		try {
 			if (isPipelined()) {
@@ -640,6 +723,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#setConfig(java.lang.String, java.lang.String)
+	 */
+	@Override
 	public void setConfig(String param, String value) {
 		try {
 			if (isPipelined()) {
@@ -656,6 +744,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#resetConfigStats()
+	 */
+	@Override
 	public void resetConfigStats() {
 		try {
 			if (isPipelined()) {
@@ -672,6 +765,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#shutdown()
+	 */
+	@Override
 	public void shutdown() {
 		try {
 			if (isPipelined()) {
@@ -703,6 +801,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		eval(String.format(SHUTDOWN_SCRIPT, option.name()).getBytes(), ReturnType.STATUS, 0);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnectionCommands#echo(byte[])
+	 */
+	@Override
 	public byte[] echo(byte[] message) {
 		try {
 			if (isPipelined()) {
@@ -719,6 +822,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnectionCommands#ping()
+	 */
+	@Override
 	public String ping() {
 		try {
 			if (isPipelined()) {
@@ -735,6 +843,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisTxCommands#discard()
+	 */
+	@Override
 	public void discard() {
 		try {
 			if (isPipelined()) {
@@ -750,6 +863,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisTxCommands#exec()
+	 */
+	@Override
 	public List<Object> exec() {
 		try {
 			if (isPipelined()) {
@@ -786,46 +904,7 @@ public class JedisConnection extends AbstractRedisConnection {
 		return jedis;
 	}
 
-	@Override
-	public RedisKeyCommands keyCommands() {
-		return new JedisKeyCommands(this);
-	}
-
-	@Override
-	public RedisStringCommands stringCommands() {
-		return new JedisStringCommands(this);
-	}
-
-	@Override
-	public RedisListCommands listCommands() {
-		return new JedisListCommands(this);
-	}
-
-	@Override
-	public RedisSetCommands setCommands() {
-		return new JedisSetCommands(this);
-	}
-
-	@Override
-	public RedisZSetCommands zSetCommands() {
-		return new JedisZSetCommands(this);
-	}
-
-	@Override
-	public RedisHashCommands hashCommands() {
-		return new JedisHashCommands(this);
-	}
-
-	@Override
-	public RedisGeoCommands geoCommands() {
-		return new JedisGeoCommands(this);
-	}
-
-	@Override
-	public RedisHyperLogLogCommands hyperLogLogCommands() {
-		return new JedisHyperLogLogCommands(this);
-	}
-
+	
 	JedisResult newJedisResult(Response<?> response) {
 		return new JedisResult(response);
 	}
@@ -838,48 +917,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		return new JedisStatusResult(response);
 	}
 
-	public Boolean expire(byte[] key, long seconds) {
-
-		Assert.notNull(key, "Key must not be null!");
-
-		if (seconds > Integer.MAX_VALUE) {
-			return pExpire(key, TimeUnit.SECONDS.toMillis(seconds));
-		}
-
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.expire(key, (int) seconds), JedisConverters.longToBoolean()));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.expire(key, (int) seconds), JedisConverters.longToBoolean()));
-				return null;
-			}
-			return JedisConverters.toBoolean(jedis.expire(key, (int) seconds));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	public Boolean expireAt(byte[] key, long unixTime) {
-
-		Assert.notNull(key, "Key must not be null!");
-
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.expireAt(key, unixTime), JedisConverters.longToBoolean()));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.expireAt(key, unixTime), JedisConverters.longToBoolean()));
-				return null;
-			}
-			return JedisConverters.toBoolean(jedis.expireAt(key, unixTime));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisTxCommands#multi()
+	 */
+	@Override
 	public void multi() {
 		if (isQueueing()) {
 			return;
@@ -895,6 +937,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnectionCommands#select(int)
+	 */
+	@Override
 	public void select(int dbIndex) {
 		try {
 			if (isPipelined()) {
@@ -911,6 +958,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisTxCommands#unwatch()
+	 */
+	@Override
 	public void unwatch() {
 		try {
 			jedis.unwatch();
@@ -919,6 +971,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisTxCommands#watch(byte[][])
+	 */
+	@Override
 	public void watch(byte[]... keys) {
 		if (isQueueing()) {
 			throw new UnsupportedOperationException();
@@ -940,6 +997,11 @@ public class JedisConnection extends AbstractRedisConnection {
 	// Pub/Sub functionality
 	//
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisPubSubCommands#publish(byte[], byte[])
+	 */
+	@Override
 	public Long publish(byte[] channel, byte[] message) {
 		try {
 			if (isPipelined()) {
@@ -956,14 +1018,29 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisPubSubCommands#getSubscription()
+	 */
+	@Override
 	public Subscription getSubscription() {
 		return subscription;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisPubSubCommands#isSubscribed()
+	 */
+	@Override
 	public boolean isSubscribed() {
 		return (subscription != null && subscription.isAlive());
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisPubSubCommands#pSubscribe(org.springframework.data.redis.connection.MessageListener, byte[][])
+	 */
+	@Override
 	public void pSubscribe(MessageListener listener, byte[]... patterns) {
 		if (isSubscribed()) {
 			throw new RedisSubscribedConnectionException(
@@ -987,6 +1064,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisPubSubCommands#subscribe(org.springframework.data.redis.connection.MessageListener, byte[][])
+	 */
+	@Override
 	public void subscribe(MessageListener listener, byte[]... channels) {
 		if (isSubscribed()) {
 			throw new RedisSubscribedConnectionException(
@@ -1015,6 +1097,11 @@ public class JedisConnection extends AbstractRedisConnection {
 	// Scripting commands
 	//
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptFlush()
+	 */
+	@Override
 	public void scriptFlush() {
 		if (isQueueing()) {
 			throw new UnsupportedOperationException();
@@ -1029,6 +1116,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptKill()
+	 */
+	@Override
 	public void scriptKill() {
 		if (isQueueing()) {
 			throw new UnsupportedOperationException();
@@ -1043,6 +1135,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptLoad(byte[])
+	 */
+	@Override
 	public String scriptLoad(byte[] script) {
 		if (isQueueing()) {
 			throw new UnsupportedOperationException();
@@ -1057,6 +1154,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptExists(java.lang.String[])
+	 */
+	@Override
 	public List<Boolean> scriptExists(String... scriptSha1) {
 		if (isQueueing()) {
 			throw new UnsupportedOperationException();
@@ -1071,6 +1173,11 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#eval(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
+	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T eval(byte[] script, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
 		if (isQueueing()) {
@@ -1087,10 +1194,20 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(java.lang.String, org.springframework.data.redis.connection.ReturnType, int, byte[][])
+	 */
+	@Override
 	public <T> T evalSha(String scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
 		return evalSha(JedisConverters.toBytes(scriptSha1), returnType, numKeys, keysAndArgs);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
+	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T evalSha(byte[] scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
 
@@ -1224,93 +1341,6 @@ public class JedisConnection extends AbstractRedisConnection {
 	}
 
 	/**
-	 * @since 1.4
-	 * @return
-	 */
-	public Cursor<byte[]> scan() {
-		return scan(ScanOptions.NONE);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisKeyCommands#scan(org.springframework.data.redis.core.ScanOptions)
-	 */
-	public Cursor<byte[]> scan(ScanOptions options) {
-		return scan(0, options != null ? options : ScanOptions.NONE);
-	}
-
-	/**
-	 * @since 1.4
-	 * @param cursorId
-	 * @param options
-	 * @return
-	 */
-	public Cursor<byte[]> scan(long cursorId, ScanOptions options) {
-
-		return new ScanCursor<byte[]>(cursorId, options) {
-
-			@Override
-			protected ScanIteration<byte[]> doScan(long cursorId, ScanOptions options) {
-
-				if (isQueueing() || isPipelined()) {
-					throw new UnsupportedOperationException("'SCAN' cannot be called in pipeline / transaction mode.");
-				}
-
-				ScanParams params = JedisConverters.toScanParams(options);
-				redis.clients.jedis.ScanResult<String> result = jedis.scan(Long.toString(cursorId), params);
-				return new ScanIteration<byte[]>(Long.valueOf(result.getStringCursor()),
-						JedisConverters.stringListToByteList().convert(result.getResult()));
-			}
-
-			protected void doClose() {
-				JedisConnection.this.close();
-			};
-
-		}.open();
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisHashCommands#hScan(byte[], org.springframework.data.redis.core.ScanOptions)
-	 */
-	@Override
-	public Cursor<Entry<byte[], byte[]>> hScan(byte[] key, ScanOptions options) {
-		return hScan(key, 0, options);
-	}
-
-	/**
-	 * @since 1.4
-	 * @param key
-	 * @param cursorId
-	 * @param options
-	 * @return
-	 */
-	public Cursor<Entry<byte[], byte[]>> hScan(byte[] key, long cursorId, ScanOptions options) {
-
-		return new KeyBoundCursor<Map.Entry<byte[], byte[]>>(key, cursorId, options) {
-
-			@Override
-			protected ScanIteration<Entry<byte[], byte[]>> doScan(byte[] key, long cursorId, ScanOptions options) {
-
-				if (isQueueing() || isPipelined()) {
-					throw new UnsupportedOperationException("'HSCAN' cannot be called in pipeline / transaction mode.");
-				}
-
-				ScanParams params = JedisConverters.toScanParams(options);
-
-				ScanResult<Entry<byte[], byte[]>> result = jedis.hscan(key, JedisConverters.toBytes(cursorId), params);
-				return new ScanIteration<Map.Entry<byte[], byte[]>>(Long.valueOf(result.getStringCursor()), result.getResult());
-			}
-
-			protected void doClose() {
-				JedisConnection.this.close();
-			};
-
-		}.open();
-	}
-
-	/**
 	 * Specifies if pipelined results should be converted to the expected data type. If false, results of
 	 * {@link #closePipeline()} and {@link #exec()} will be of the type returned by the Jedis driver
 	 *
@@ -1320,6 +1350,10 @@ public class JedisConnection extends AbstractRedisConnection {
 		this.convertPipelineAndTxResults = convertPipelineAndTxResults;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.AbstractRedisConnection#isActive(org.springframework.data.redis.connection.RedisNode)
+	 */
 	@Override
 	protected boolean isActive(RedisNode node) {
 
@@ -1342,6 +1376,10 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.AbstractRedisConnection#getSentinelConnection(org.springframework.data.redis.connection.RedisNode)
+	 */
 	@Override
 	protected JedisSentinelConnection getSentinelConnection(RedisNode sentinel) {
 		return new JedisSentinelConnection(getJedis(sentinel));

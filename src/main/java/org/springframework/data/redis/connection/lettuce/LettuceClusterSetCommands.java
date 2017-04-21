@@ -29,7 +29,7 @@ import org.springframework.data.redis.util.ByteUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceClusterSetCommands extends LettuceSetCommands {
+class LettuceClusterSetCommands extends LettuceSetCommands {
 
 	private final LettuceClusterConnection connection;
 

@@ -38,16 +38,12 @@ import org.springframework.data.redis.util.ByteUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterSetCommands implements RedisSetCommands {
+class JedisClusterSetCommands implements RedisSetCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterSetCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -388,6 +384,10 @@ public class JedisClusterSetCommands implements RedisSetCommands {
 				return new ScanIteration<>(Long.valueOf(result.getStringCursor()), result.getResult());
 			}
 		}.open();
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 
 }

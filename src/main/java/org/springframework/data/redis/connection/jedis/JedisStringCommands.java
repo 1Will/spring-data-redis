@@ -28,32 +28,12 @@ import org.springframework.util.ObjectUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisStringCommands implements RedisStringCommands {
+class JedisStringCommands implements RedisStringCommands {
 
 	private final JedisConnection connection;
 
 	public JedisStringCommands(JedisConnection connection) {
 		this.connection = connection;
-	}
-
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private void pipeline(JedisResult result) {
-		connection.pipeline(result);
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void transaction(JedisResult result) {
-		connection.transaction(result);
-	}
-
-	private RuntimeException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	@Override
@@ -576,5 +556,25 @@ public class JedisStringCommands implements RedisStringCommands {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private void pipeline(JedisResult result) {
+		connection.pipeline(result);
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void transaction(JedisResult result) {
+		connection.transaction(result);
+	}
+
+	private RuntimeException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

@@ -27,7 +27,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnection.JedisResu
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisListCommands implements RedisListCommands {
+class JedisListCommands implements RedisListCommands {
 
 	private final JedisConnection connection;
 
@@ -35,26 +35,10 @@ public class JedisListCommands implements RedisListCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private void pipeline(JedisResult result) {
-		connection.pipeline(result);
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void transaction(JedisResult result) {
-		connection.transaction(result);
-	}
-
-	private RuntimeException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#rPush(byte[], byte[][])
+	 */
 	@Override
 	public Long rPush(byte[] key, byte[]... values) {
 
@@ -73,6 +57,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lPush(byte[], byte[][])
+	 */
 	@Override
 	public Long lPush(byte[] key, byte[]... values) {
 
@@ -89,9 +77,12 @@ public class JedisListCommands implements RedisListCommands {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
-
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#rPushX(byte[], byte[])
+	 */
 	@Override
 	public Long rPushX(byte[] key, byte[] value) {
 		try {
@@ -109,6 +100,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lPushX(byte[], byte[])
+	 */
 	@Override
 	public Long lPushX(byte[] key, byte[] value) {
 
@@ -125,9 +120,12 @@ public class JedisListCommands implements RedisListCommands {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
-
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lLen(byte[])
+	 */
 	@Override
 	public Long lLen(byte[] key) {
 
@@ -146,6 +144,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lRange(byte[], long, long)
+	 */
 	@Override
 	public List<byte[]> lRange(byte[] key, long start, long end) {
 
@@ -164,6 +166,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lTrim(byte[], long, long)
+	 */
 	@Override
 	public void lTrim(byte[] key, long start, long end) {
 
@@ -182,6 +188,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lIndex(byte[], long)
+	 */
 	@Override
 	public byte[] lIndex(byte[] key, long index) {
 
@@ -200,6 +210,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lInsert(byte[], org.springframework.data.redis.connection.RedisListCommands.Position, byte[], byte[])
+	 */
 	@Override
 	public Long lInsert(byte[] key, Position where, byte[] pivot, byte[] value) {
 
@@ -220,6 +234,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lSet(byte[], long, byte[])
+	 */
 	@Override
 	public void lSet(byte[] key, long index, byte[] value) {
 
@@ -238,6 +256,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lRem(byte[], long, byte[])
+	 */
 	@Override
 	public Long lRem(byte[] key, long count, byte[] value) {
 
@@ -256,6 +278,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#lPop(byte[])
+	 */
 	@Override
 	public byte[] lPop(byte[] key) {
 
@@ -274,6 +300,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#rPop(byte[])
+	 */
 	@Override
 	public byte[] rPop(byte[] key) {
 
@@ -293,6 +323,10 @@ public class JedisListCommands implements RedisListCommands {
 
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#bLPop(int, byte[][])
+	 */
 	@Override
 	public List<byte[]> bLPop(int timeout, byte[]... keys) {
 
@@ -311,6 +345,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#bRPop(int, byte[][])
+	 */
 	@Override
 	public List<byte[]> bRPop(int timeout, byte[]... keys) {
 
@@ -329,6 +367,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#rPopLPush(byte[], byte[])
+	 */
 	@Override
 	public byte[] rPopLPush(byte[] srcKey, byte[] dstKey) {
 
@@ -347,6 +389,10 @@ public class JedisListCommands implements RedisListCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisListCommands#bRPopLPush(int, byte[], byte[])
+	 */
 	@Override
 	public byte[] bRPopLPush(int timeout, byte[] srcKey, byte[] dstKey) {
 
@@ -373,5 +419,25 @@ public class JedisListCommands implements RedisListCommands {
 		}
 		args.add(Protocol.toByteArray(timeout));
 		return args.toArray(new byte[args.size()][]);
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private void pipeline(JedisResult result) {
+		connection.pipeline(result);
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void transaction(JedisResult result) {
+		connection.transaction(result);
+	}
+
+	private RuntimeException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

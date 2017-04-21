@@ -35,16 +35,12 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterZSetCommands implements RedisZSetCommands {
+class JedisClusterZSetCommands implements RedisZSetCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterZSetCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -61,6 +57,10 @@ public class JedisClusterZSetCommands implements RedisZSetCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zAdd(byte[], java.util.Set)
+	 */
 	@Override
 	public Long zAdd(byte[] key, Set<Tuple> tuples) {
 
@@ -576,6 +576,10 @@ public class JedisClusterZSetCommands implements RedisZSetCommands {
 		throw new InvalidDataAccessApiUsageException("ZUNIONSTORE can only be executed when all keys map to the same slot");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zInterStore(byte[], byte[][])
+	 */
 	@Override
 	public Long zInterStore(byte[] destKey, byte[]... sets) {
 
@@ -593,6 +597,10 @@ public class JedisClusterZSetCommands implements RedisZSetCommands {
 		throw new InvalidDataAccessApiUsageException("ZINTERSTORE can only be executed when all keys map to the same slot");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zInterStore(byte[], org.springframework.data.redis.connection.RedisZSetCommands.Aggregate, int[], byte[][])
+	 */
 	@Override
 	public Long zInterStore(byte[] destKey, Aggregate aggregate, int[] weights, byte[]... sets) {
 
@@ -612,6 +620,10 @@ public class JedisClusterZSetCommands implements RedisZSetCommands {
 		throw new IllegalArgumentException("ZINTERSTORE can only be executed when all keys map to the same slot");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisZSetCommands#zScan(byte[], org.springframework.data.redis.core.ScanOptions)
+	 */
 	@Override
 	public Cursor<Tuple> zScan(final byte[] key, final ScanOptions options) {
 		return new ScanCursor<Tuple>(options) {
@@ -660,6 +672,10 @@ public class JedisClusterZSetCommands implements RedisZSetCommands {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 
 }

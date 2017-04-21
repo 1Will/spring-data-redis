@@ -37,7 +37,7 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisGeoCommands implements RedisGeoCommands {
+class JedisGeoCommands implements RedisGeoCommands {
 
 	private final JedisConnection connection;
 
@@ -45,26 +45,10 @@ public class JedisGeoCommands implements RedisGeoCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private void pipeline(JedisResult result) {
-		connection.pipeline(result);
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void transaction(JedisResult result) {
-		connection.transaction(result);
-	}
-
-	private RuntimeException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisGeoCommands#geoAdd(byte[], org.springframework.data.geo.Point, byte[])
+	 */
 	@Override
 	public Long geoAdd(byte[] key, Point point, byte[] member) {
 
@@ -425,5 +409,25 @@ public class JedisGeoCommands implements RedisGeoCommands {
 	@Override
 	public Long geoRemove(byte[] key, byte[]... members) {
 		return connection.zSetCommands().zRem(key, members);
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private void pipeline(JedisResult result) {
+		connection.pipeline(result);
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void transaction(JedisResult result) {
+		connection.transaction(result);
+	}
+
+	private RuntimeException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

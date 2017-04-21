@@ -34,16 +34,12 @@ import org.springframework.data.redis.core.ScanOptions;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterHashCommands implements RedisHashCommands {
+class JedisClusterHashCommands implements RedisHashCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterHashCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -246,5 +242,9 @@ public class JedisClusterHashCommands implements RedisHashCommands {
 				return new ScanIteration<>(Long.valueOf(result.getStringCursor()), result.getResult());
 			}
 		}.open();
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

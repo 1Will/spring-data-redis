@@ -37,7 +37,7 @@ import org.springframework.util.CollectionUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceClusterKeyCommands extends LettuceKeyCommands {
+class LettuceClusterKeyCommands extends LettuceKeyCommands {
 
 	private final LettuceClusterConnection connection;
 

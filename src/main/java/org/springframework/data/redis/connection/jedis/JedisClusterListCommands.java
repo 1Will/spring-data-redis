@@ -31,16 +31,12 @@ import org.springframework.util.CollectionUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterListCommands implements RedisListCommands {
+class JedisClusterListCommands implements RedisListCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterListCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -309,5 +305,9 @@ public class JedisClusterListCommands implements RedisListCommands {
 		}
 
 		return null;
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

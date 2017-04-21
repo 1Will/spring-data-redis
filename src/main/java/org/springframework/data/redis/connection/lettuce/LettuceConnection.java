@@ -24,7 +24,6 @@ import io.lettuce.core.RedisException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.ScanArgs;
-import io.lettuce.core.SortArgs;
 import io.lettuce.core.TransactionResult;
 import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -93,7 +92,6 @@ import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
 import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.connection.convert.TransactionResultConverter;
 import org.springframework.data.redis.core.RedisCommand;
@@ -398,8 +396,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 
 	/**
 	 * 'Native' or 'raw' execution of the given command along-side the given arguments.
-	 * 
-	 * @see RedisCommands#execute(String, byte[]...)
+	 *
 	 * @param command Command to execute
 	 * @param commandOutputTypeHint Type of Output to use, may be (may be {@literal null}).
 	 * @param args Possible command arguments (may be {@literal null})
@@ -561,44 +558,6 @@ public class LettuceConnection extends AbstractRedisConnection {
 		}
 
 		return Collections.emptyList();
-	}
-
-	public List<byte[]> sort(byte[] key, SortParameters params) {
-
-		SortArgs args = LettuceConverters.toSortArgs(params);
-
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceResult(getAsyncConnection().sort(key, args)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(getConnection().sort(key, args)));
-				return null;
-			}
-			return getConnection().sort(key, args);
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public Long sort(byte[] key, SortParameters params, byte[] sortKey) {
-
-		SortArgs args = LettuceConverters.toSortArgs(params);
-
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceResult(getAsyncConnection().sortStore(key, args, sortKey)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(getConnection().sortStore(key, args, sortKey)));
-				return null;
-			}
-			return getConnection().sortStore(key, args, sortKey);
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
 	}
 
 	public Long dbSize() {

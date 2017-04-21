@@ -23,7 +23,7 @@ import org.springframework.data.redis.connection.ClusterSlotHashUtil;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceClusterStringCommands extends LettuceStringCommands {
+class LettuceClusterStringCommands extends LettuceStringCommands {
 
 	private final LettuceClusterConnection connection;
 

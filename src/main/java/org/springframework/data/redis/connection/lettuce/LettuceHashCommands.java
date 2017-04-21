@@ -38,7 +38,7 @@ import org.springframework.data.redis.core.ScanOptions;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceHashCommands implements RedisHashCommands {
+class LettuceHashCommands implements RedisHashCommands {
 
 	private final LettuceConnection connection;
 
@@ -46,34 +46,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void pipeline(LettuceResult result) {
-		connection.pipeline(result);
-	}
-
-	private void transaction(LettuceTxResult result) {
-		connection.transaction(result);
-	}
-
-	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
-		return connection.getAsyncConnection();
-	}
-
-	public RedisClusterCommands<byte[], byte[]> getConnection() {
-		return connection.getConnection();
-	}
-
-	private DataAccessException convertLettuceAccessException(Exception ex) {
-		return connection.convertLettuceAccessException(ex);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hSet(byte[], byte[], byte[])
+	 */
+	@Override
 	public Boolean hSet(byte[] key, byte[] field, byte[] value) {
 		try {
 			if (isPipelined()) {
@@ -90,6 +67,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hSetNX(byte[], byte[], byte[])
+	 */
+	@Override
 	public Boolean hSetNX(byte[] key, byte[] field, byte[] value) {
 		try {
 			if (isPipelined()) {
@@ -106,6 +88,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hDel(byte[], byte[][])
+	 */
+	@Override
 	public Long hDel(byte[] key, byte[]... fields) {
 		try {
 			if (isPipelined()) {
@@ -122,6 +109,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hExists(byte[], byte[])
+	 */
+	@Override
 	public Boolean hExists(byte[] key, byte[] field) {
 		try {
 			if (isPipelined()) {
@@ -138,6 +130,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hGet(byte[], byte[])
+	 */
+	@Override
 	public byte[] hGet(byte[] key, byte[] field) {
 		try {
 			if (isPipelined()) {
@@ -154,6 +151,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hGetAll(byte[])
+	 */
+	@Override
 	public Map<byte[], byte[]> hGetAll(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -170,6 +172,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hIncrBy(byte[], byte[], long)
+	 */
+	@Override
 	public Long hIncrBy(byte[] key, byte[] field, long delta) {
 		try {
 			if (isPipelined()) {
@@ -186,6 +193,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hIncrBy(byte[], byte[], double)
+	 */
+	@Override
 	public Double hIncrBy(byte[] key, byte[] field, double delta) {
 		try {
 			if (isPipelined()) {
@@ -202,6 +214,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hKeys(byte[])
+	 */
+	@Override
 	public Set<byte[]> hKeys(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -218,6 +235,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hLen(byte[])
+	 */
+	@Override
 	public Long hLen(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -234,6 +256,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hMGet(byte[], byte[][])
+	 */
+	@Override
 	public List<byte[]> hMGet(byte[] key, byte[]... fields) {
 		try {
 			if (isPipelined()) {
@@ -252,6 +279,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hMSet(byte[], java.util.Map)
+	 */
+	@Override
 	public void hMSet(byte[] key, Map<byte[], byte[]> tuple) {
 		try {
 			if (isPipelined()) {
@@ -268,6 +300,11 @@ public class LettuceHashCommands implements RedisHashCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisHashCommands#hVals(byte[])
+	 */
+	@Override
 	public List<byte[]> hVals(byte[] key) {
 		try {
 			if (isPipelined()) {
@@ -325,6 +362,34 @@ public class LettuceHashCommands implements RedisHashCommands {
 			}
 
 		}.open();
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void pipeline(LettuceResult result) {
+		connection.pipeline(result);
+	}
+
+	private void transaction(LettuceTxResult result) {
+		connection.transaction(result);
+	}
+
+	RedisClusterAsyncCommands<byte[], byte[]> getAsyncConnection() {
+		return connection.getAsyncConnection();
+	}
+
+	public RedisClusterCommands<byte[], byte[]> getConnection() {
+		return connection.getConnection();
+	}
+
+	private DataAccessException convertLettuceAccessException(Exception ex) {
+		return connection.convertLettuceAccessException(ex);
 	}
 
 }

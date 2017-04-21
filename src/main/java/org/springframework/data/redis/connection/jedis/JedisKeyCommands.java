@@ -15,6 +15,9 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.SortingParams;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -25,15 +28,16 @@ import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.connection.jedis.JedisConnection.JedisResult;
 import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanCursor;
+import org.springframework.data.redis.core.ScanIteration;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.util.Assert;
-import redis.clients.jedis.SortingParams;
 
 /**
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisKeyCommands implements RedisKeyCommands {
+class JedisKeyCommands implements RedisKeyCommands {
 
 	private final JedisConnection connection;
 
@@ -41,22 +45,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		this.connection = connection;
 	}
 
-	private boolean isPipelined() {
-		return connection.isPipelined();
-	}
-
-	private void pipeline(JedisResult result) {
-		connection.pipeline(result);
-	}
-
-	private boolean isQueueing() {
-		return connection.isQueueing();
-	}
-
-	private void transaction(JedisResult result) {
-		connection.transaction(result);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#exists(byte[])
+	 */
 	@Override
 	public Boolean exists(byte[] key) {
 
@@ -75,6 +67,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#del(byte[][])
+	 */
 	@Override
 	public Long del(byte[]... keys) {
 
@@ -91,9 +87,12 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		} catch (Exception ex) {
 			throw connection.convertJedisAccessException(ex);
 		}
-
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#type(byte[])
+	 */
 	@Override
 	public DataType type(byte[] key) {
 
@@ -113,6 +112,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#keys(byte[])
+	 */
 	@Override
 	public Set<byte[]> keys(byte[] pattern) {
 
@@ -129,14 +132,50 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		} catch (Exception ex) {
 			throw connection.convertJedisAccessException(ex);
 		}
-
 	}
 
-	@Override
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#scan(org.springframework.data.redis.core.ScanOptions)
+	 */
 	public Cursor<byte[]> scan(ScanOptions options) {
-		return null;
+		return scan(0, options != null ? options : ScanOptions.NONE);
 	}
 
+	/**
+	 * @since 1.4
+	 * @param cursorId
+	 * @param options
+	 * @return
+	 */
+	public Cursor<byte[]> scan(long cursorId, ScanOptions options) {
+
+		return new ScanCursor<byte[]>(cursorId, options) {
+
+			@Override
+			protected ScanIteration<byte[]> doScan(long cursorId, ScanOptions options) {
+
+				if (isQueueing() || isPipelined()) {
+					throw new UnsupportedOperationException("'SCAN' cannot be called in pipeline / transaction mode.");
+				}
+
+				ScanParams params = JedisConverters.toScanParams(options);
+				redis.clients.jedis.ScanResult<String> result = connection.getJedis().scan(Long.toString(cursorId), params);
+				return new ScanIteration<byte[]>(Long.valueOf(result.getStringCursor()),
+						JedisConverters.stringListToByteList().convert(result.getResult()));
+			}
+
+			protected void doClose() {
+				JedisKeyCommands.this.connection.close();
+			};
+
+		}.open();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#randomKey()
+	 */
 	@Override
 	public byte[] randomKey() {
 
@@ -155,6 +194,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#rename(byte[], byte[])
+	 */
 	@Override
 	public void rename(byte[] oldName, byte[] newName) {
 
@@ -173,16 +216,22 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#renameNX(byte[], byte[])
+	 */
 	@Override
 	public Boolean renameNX(byte[] oldName, byte[] newName) {
 
 		try {
 			if (isPipelined()) {
-				pipeline(connection.newJedisResult(connection.getPipeline().renamenx(oldName, newName), JedisConverters.longToBoolean()));
+				pipeline(connection.newJedisResult(connection.getPipeline().renamenx(oldName, newName),
+						JedisConverters.longToBoolean()));
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().renamenx(oldName, newName), JedisConverters.longToBoolean()));
+				transaction(connection.newJedisResult(connection.getTransaction().renamenx(oldName, newName),
+						JedisConverters.longToBoolean()));
 				return null;
 			}
 			return JedisConverters.toBoolean(connection.getJedis().renamenx(oldName, newName));
@@ -191,11 +240,66 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#expire(byte[], long)
+	 */
 	@Override
 	public Boolean expire(byte[] key, long seconds) {
-		return null;
+
+		Assert.notNull(key, "Key must not be null!");
+
+		if (seconds > Integer.MAX_VALUE) {
+			return pExpire(key, TimeUnit.SECONDS.toMillis(seconds));
+		}
+
+		try {
+			if (isPipelined()) {
+				pipeline(connection.newJedisResult(connection.getPipeline().expire(key, (int) seconds),
+						JedisConverters.longToBoolean()));
+				return null;
+			}
+			if (isQueueing()) {
+				transaction(connection.newJedisResult(connection.getTransaction().expire(key, (int) seconds),
+						JedisConverters.longToBoolean()));
+				return null;
+			}
+			return JedisConverters.toBoolean(connection.getJedis().expire(key, (int) seconds));
+		} catch (Exception ex) {
+			throw connection.convertJedisAccessException(ex);
+		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#expireAt(byte[], long)
+	 */
+	@Override
+	public Boolean expireAt(byte[] key, long unixTime) {
+
+		Assert.notNull(key, "Key must not be null!");
+
+		try {
+			if (isPipelined()) {
+				pipeline(connection.newJedisResult(connection.getPipeline().expireAt(key, unixTime),
+						JedisConverters.longToBoolean()));
+				return null;
+			}
+			if (isQueueing()) {
+				transaction(connection.newJedisResult(connection.getTransaction().expireAt(key, unixTime),
+						JedisConverters.longToBoolean()));
+				return null;
+			}
+			return JedisConverters.toBoolean(connection.getJedis().expireAt(key, unixTime));
+		} catch (Exception ex) {
+			throw connection.convertJedisAccessException(ex);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pExpire(byte[], long)
+	 */
 	@Override
 	public Boolean pExpire(byte[] key, long millis) {
 
@@ -203,11 +307,13 @@ public class JedisKeyCommands implements RedisKeyCommands {
 
 		try {
 			if (isPipelined()) {
-				pipeline(connection.newJedisResult(connection.getPipeline().pexpire(key, millis), JedisConverters.longToBoolean()));
+				pipeline(
+						connection.newJedisResult(connection.getPipeline().pexpire(key, millis), JedisConverters.longToBoolean()));
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().pexpire(key, millis), JedisConverters.longToBoolean()));
+				transaction(connection.newJedisResult(connection.getTransaction().pexpire(key, millis),
+						JedisConverters.longToBoolean()));
 				return null;
 			}
 			return JedisConverters.toBoolean(connection.getJedis().pexpire(key, millis));
@@ -216,11 +322,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
-	@Override
-	public Boolean expireAt(byte[] key, long unixTime) {
-		return null;
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pExpireAt(byte[], long)
+	 */
 	@Override
 	public Boolean pExpireAt(byte[] key, long unixTimeInMillis) {
 
@@ -228,11 +333,13 @@ public class JedisKeyCommands implements RedisKeyCommands {
 
 		try {
 			if (isPipelined()) {
-				pipeline(connection.newJedisResult(connection.getPipeline().pexpireAt(key, unixTimeInMillis), JedisConverters.longToBoolean()));
+				pipeline(connection.newJedisResult(connection.getPipeline().pexpireAt(key, unixTimeInMillis),
+						JedisConverters.longToBoolean()));
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().pexpireAt(key, unixTimeInMillis), JedisConverters.longToBoolean()));
+				transaction(connection.newJedisResult(connection.getTransaction().pexpireAt(key, unixTimeInMillis),
+						JedisConverters.longToBoolean()));
 				return null;
 			}
 			return JedisConverters.toBoolean(connection.getJedis().pexpireAt(key, unixTimeInMillis));
@@ -241,6 +348,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#persist(byte[])
+	 */
 	@Override
 	public Boolean persist(byte[] key) {
 
@@ -250,26 +361,32 @@ public class JedisKeyCommands implements RedisKeyCommands {
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().persist(key), JedisConverters.longToBoolean()));
+				transaction(
+						connection.newJedisResult(connection.getTransaction().persist(key), JedisConverters.longToBoolean()));
 				return null;
 			}
 			return JedisConverters.toBoolean(connection.getJedis().persist(key));
 		} catch (Exception ex) {
 			throw connection.convertJedisAccessException(ex);
 		}
-
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#move(byte[], int)
+	 */
 	@Override
 	public Boolean move(byte[] key, int dbIndex) {
 
 		try {
 			if (isPipelined()) {
-				pipeline(connection.newJedisResult(connection.getPipeline().move(key, dbIndex), JedisConverters.longToBoolean()));
+				pipeline(
+						connection.newJedisResult(connection.getPipeline().move(key, dbIndex), JedisConverters.longToBoolean()));
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().move(key, dbIndex), JedisConverters.longToBoolean()));
+				transaction(
+						connection.newJedisResult(connection.getTransaction().move(key, dbIndex), JedisConverters.longToBoolean()));
 				return null;
 			}
 			return JedisConverters.toBoolean(connection.getJedis().move(key, dbIndex));
@@ -278,6 +395,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#ttl(byte[])
+	 */
 	@Override
 	public Long ttl(byte[] key) {
 
@@ -299,6 +420,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#ttl(byte[], java.util.concurrent.TimeUnit)
+	 */
 	@Override
 	public Long ttl(byte[] key, TimeUnit timeUnit) {
 
@@ -310,7 +435,8 @@ public class JedisKeyCommands implements RedisKeyCommands {
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().ttl(key), Converters.secondsToTimeUnit(timeUnit)));
+				transaction(
+						connection.newJedisResult(connection.getTransaction().ttl(key), Converters.secondsToTimeUnit(timeUnit)));
 				return null;
 			}
 
@@ -320,6 +446,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pTtl(byte[])
+	 */
 	@Override
 	public Long pTtl(byte[] key) {
 
@@ -339,9 +469,12 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		} catch (Exception ex) {
 			throw connection.convertJedisAccessException(ex);
 		}
-
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#pTtl(byte[], java.util.concurrent.TimeUnit)
+	 */
 	@Override
 	public Long pTtl(byte[] key, TimeUnit timeUnit) {
 
@@ -349,11 +482,13 @@ public class JedisKeyCommands implements RedisKeyCommands {
 
 		try {
 			if (isPipelined()) {
-				pipeline(connection.newJedisResult(connection.getPipeline().pttl(key), Converters.millisecondsToTimeUnit(timeUnit)));
+				pipeline(
+						connection.newJedisResult(connection.getPipeline().pttl(key), Converters.millisecondsToTimeUnit(timeUnit)));
 				return null;
 			}
 			if (isQueueing()) {
-				transaction(connection.newJedisResult(connection.getTransaction().pttl(key), Converters.millisecondsToTimeUnit(timeUnit)));
+				transaction(connection.newJedisResult(connection.getTransaction().pttl(key),
+						Converters.millisecondsToTimeUnit(timeUnit)));
 				return null;
 			}
 
@@ -363,6 +498,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters)
+	 */
 	@Override
 	public List<byte[]> sort(byte[] key, SortParameters params) {
 
@@ -393,6 +532,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters, byte[])
+	 */
 	@Override
 	public Long sort(byte[] key, SortParameters params, byte[] storeKey) {
 
@@ -417,12 +560,17 @@ public class JedisKeyCommands implements RedisKeyCommands {
 
 				return null;
 			}
-			return (sortParams != null ? connection.getJedis().sort(key, sortParams, storeKey) : connection.getJedis().sort(key, storeKey));
+			return (sortParams != null ? connection.getJedis().sort(key, sortParams, storeKey)
+					: connection.getJedis().sort(key, storeKey));
 		} catch (Exception ex) {
 			throw connection.convertJedisAccessException(ex);
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#dump(byte[])
+	 */
 	@Override
 	public byte[] dump(byte[] key) {
 
@@ -441,6 +589,10 @@ public class JedisKeyCommands implements RedisKeyCommands {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisKeyCommands#restore(byte[], long, byte[])
+	 */
 	@Override
 	public void restore(byte[] key, long ttlInMillis, byte[] serializedValue) {
 
@@ -453,7 +605,8 @@ public class JedisKeyCommands implements RedisKeyCommands {
 				return;
 			}
 			if (isQueueing()) {
-				transaction(connection.newStatusResult(connection.getTransaction().restore(key, (int) ttlInMillis, serializedValue)));
+				transaction(
+						connection.newStatusResult(connection.getTransaction().restore(key, (int) ttlInMillis, serializedValue)));
 				return;
 			}
 			connection.getJedis().restore(key, (int) ttlInMillis, serializedValue);
@@ -461,5 +614,21 @@ public class JedisKeyCommands implements RedisKeyCommands {
 			throw connection.convertJedisAccessException(ex);
 		}
 
+	}
+
+	private boolean isPipelined() {
+		return connection.isPipelined();
+	}
+
+	private void pipeline(JedisResult result) {
+		connection.pipeline(result);
+	}
+
+	private boolean isQueueing() {
+		return connection.isQueueing();
+	}
+
+	private void transaction(JedisResult result) {
+		connection.transaction(result);
 	}
 }

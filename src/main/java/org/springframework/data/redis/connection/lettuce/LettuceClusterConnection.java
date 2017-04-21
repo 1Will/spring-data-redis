@@ -53,11 +53,11 @@ import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.connection.RedisHashCommands;
 import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
+import org.springframework.data.redis.connection.RedisKeyCommands;
 import org.springframework.data.redis.connection.RedisListCommands;
 import org.springframework.data.redis.connection.RedisSetCommands;
 import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
@@ -132,7 +132,11 @@ public class LettuceClusterConnection extends LettuceConnection
 	}
 
 	@Override
-	public LettuceClusterKeyCommands keyCommands() {
+	public RedisKeyCommands keyCommands() {
+		return doGetClusterKeyCommands();
+	}
+
+	private LettuceClusterKeyCommands doGetClusterKeyCommands() {
 		return new LettuceClusterKeyCommands(this);
 	}
 
@@ -702,11 +706,11 @@ public class LettuceClusterConnection extends LettuceConnection
 	 */
 	@Override
 	public Set<byte[]> keys(RedisClusterNode node, final byte[] pattern) {
-		return keyCommands().keys(node, pattern);
+		return doGetClusterKeyCommands().keys(node, pattern);
 	}
 
 	public byte[] randomKey(RedisClusterNode node) {
-		return keyCommands().randomKey(node);
+		return doGetClusterKeyCommands().randomKey(node);
 	}
 
 	/*
@@ -783,11 +787,6 @@ public class LettuceClusterConnection extends LettuceConnection
 	@Override
 	public void multi() {
 		throw new InvalidDataAccessApiUsageException("MULTI is currently not supported in cluster mode.");
-	}
-
-	@Override
-	public Long sort(byte[] key, SortParameters params, byte[] sortKey) {
-		return keyCommands().sort(key, params, sortKey);
 	}
 
 	/*

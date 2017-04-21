@@ -50,12 +50,19 @@ import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.connection.RedisHashCommands;
+import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
+import org.springframework.data.redis.connection.RedisKeyCommands;
+import org.springframework.data.redis.connection.RedisListCommands;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPipelineException;
 import org.springframework.data.redis.connection.RedisSentinelConnection;
+import org.springframework.data.redis.connection.RedisSetCommands;
+import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
+import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.RedisClientInfo;
@@ -141,48 +148,52 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	}
 
 	@Override
-	public JedisClusterGeoCommands geoCommands() {
+	public RedisGeoCommands geoCommands() {
 		return new JedisClusterGeoCommands(this);
 	}
 
 	@Override
-	public JedisClusterHashCommands hashCommands() {
+	public RedisHashCommands hashCommands() {
 		return new JedisClusterHashCommands(this);
 	}
 
 	@Override
-	public JedisClusterHyperLogLogCommands hyperLogLogCommands() {
+	public RedisHyperLogLogCommands hyperLogLogCommands() {
 		return new JedisClusterHyperLogLogCommands(this);
 	}
 
 	@Override
-	public JedisClusterKeyCommands keyCommands() {
-		return new JedisClusterKeyCommands(this);
+	public RedisKeyCommands keyCommands() {
+		return doGetKeyCommands();
 	}
 
 	@Override
-	public JedisClusterStringCommands stringCommands() {
+	public RedisStringCommands stringCommands() {
 		return new JedisClusterStringCommands(this);
 	}
 
 	@Override
-	public JedisClusterListCommands listCommands() {
+	public RedisListCommands listCommands() {
 		return new JedisClusterListCommands(this);
 	}
 
 	@Override
-	public JedisClusterSetCommands setCommands() {
+	public RedisSetCommands setCommands() {
 		return new JedisClusterSetCommands(this);
 	}
 
 	@Override
-	public JedisClusterZSetCommands zSetCommands() {
+	public RedisZSetCommands zSetCommands() {
 		return new JedisClusterZSetCommands(this);
+	}
+
+	private JedisClusterKeyCommands doGetKeyCommands() {
+		return new JedisClusterKeyCommands(this);
 	}
 
 	@Override
 	public Set<byte[]> keys(RedisClusterNode node, final byte[] pattern) {
-		return keyCommands().keys(node, pattern);
+		return doGetKeyCommands().keys(node, pattern);
 	}
 
 	/*
@@ -191,25 +202,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	 */
 	@Override
 	public byte[] randomKey(RedisClusterNode node) {
-		return keyCommands().randomKey(node);
-	}
-
-	/*
-	   * (non-Javadoc)
-	   * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters)
-	   */
-	@Override
-	public List<byte[]> sort(byte[] key, SortParameters params) {
-		return keyCommands().sort(key, params);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisKeyCommands#sort(byte[], org.springframework.data.redis.connection.SortParameters, byte[])
-	 */
-	@Override
-	public Long sort(byte[] key, SortParameters params, byte[] storeKey) {
-		return keyCommands().sort(key, params, storeKey);
+		return doGetKeyCommands().randomKey(node);
 	}
 
 	/*
@@ -1648,15 +1641,15 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		}
 	}
 
-	JedisCluster getCluster() {
+	protected JedisCluster getCluster() {
 		return cluster;
 	}
 
-	ClusterCommandExecutor getClusterCommandExecutor() {
+	protected ClusterCommandExecutor getClusterCommandExecutor() {
 		return clusterCommandExecutor;
 	}
 
-	JedisClusterTopologyProvider getTopologyProvider() {
+	protected JedisClusterTopologyProvider getTopologyProvider() {
 		return topologyProvider;
 	}
 }

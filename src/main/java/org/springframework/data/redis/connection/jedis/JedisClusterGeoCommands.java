@@ -36,16 +36,12 @@ import org.springframework.util.Assert;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterGeoCommands implements RedisGeoCommands {
+class JedisClusterGeoCommands implements RedisGeoCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterGeoCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -280,5 +276,9 @@ public class JedisClusterGeoCommands implements RedisGeoCommands {
 	@Override
 	public Long geoRemove(byte[] key, byte[]... members) {
 		return connection.zRem(key, members);
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

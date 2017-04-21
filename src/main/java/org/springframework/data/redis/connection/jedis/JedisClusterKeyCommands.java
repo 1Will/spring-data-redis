@@ -46,16 +46,12 @@ import org.springframework.util.CollectionUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterKeyCommands implements RedisKeyCommands {
+class JedisClusterKeyCommands implements RedisKeyCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterKeyCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -478,5 +474,9 @@ public class JedisClusterKeyCommands implements RedisKeyCommands {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }

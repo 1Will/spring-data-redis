@@ -19,7 +19,7 @@ package org.springframework.data.redis.connection.lettuce;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class LettuceClusterHashCommands extends LettuceHashCommands {
+class LettuceClusterHashCommands extends LettuceHashCommands {
 
 	public LettuceClusterHashCommands(LettuceClusterConnection connection) {
 		super(connection);

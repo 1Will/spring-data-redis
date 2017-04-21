@@ -25,16 +25,12 @@ import org.springframework.data.redis.util.ByteUtils;
  * @author Christoph Strobl
  * @since 2.0
  */
-public class JedisClusterHyperLogLogCommands implements RedisHyperLogLogCommands {
+class JedisClusterHyperLogLogCommands implements RedisHyperLogLogCommands {
 
 	private final JedisClusterConnection connection;
 
 	public JedisClusterHyperLogLogCommands(JedisClusterConnection connection) {
 		this.connection = connection;
-	}
-
-	protected DataAccessException convertJedisAccessException(Exception ex) {
-		return connection.convertJedisAccessException(ex);
 	}
 
 	/*
@@ -89,5 +85,9 @@ public class JedisClusterHyperLogLogCommands implements RedisHyperLogLogCommands
 		}
 
 		throw new InvalidDataAccessApiUsageException("All keys must map to same slot for pfmerge in cluster mode.");
+	}
+
+	private DataAccessException convertJedisAccessException(Exception ex) {
+		return connection.convertJedisAccessException(ex);
 	}
 }
