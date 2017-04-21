@@ -123,7 +123,6 @@ public class LettuceClusterConnection extends LettuceConnection
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#scan(long, org.springframework.data.redis.core.ScanOptions)
 	 */
-	@Override
 	public Cursor<byte[]> scan(long cursorId, ScanOptions options) {
 		throw new InvalidDataAccessApiUsageException("Scan is not supported accros multiple nodes within a cluster.");
 	}

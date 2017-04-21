@@ -523,7 +523,9 @@ public interface RedisZSetCommands {
 	 * @return
 	 * @see <a href="http://redis.io/commands/zcount">Redis Documentation: ZCOUNT</a>
 	 */
-	Long zCount(byte[] key, double min, double max);
+	default Long zCount(byte[] key, double min, double max) {
+		return zCount(key, new Range().gte(min).lte(max));
+	}
 
 	/**
 	 * Count number of elements within sorted set with scores between {@code Range#min} and {@code Range#max}.
