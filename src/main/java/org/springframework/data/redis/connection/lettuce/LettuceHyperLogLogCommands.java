@@ -62,7 +62,7 @@ public class LettuceHyperLogLogCommands implements RedisHyperLogLogCommands {
 		return connection.getConnection();
 	}
 
-	private DataAccessException convertLettuceAccessException(Exception ex) {
+	protected DataAccessException convertLettuceAccessException(Exception ex) {
 		return connection.convertLettuceAccessException(ex);
 	}
 
