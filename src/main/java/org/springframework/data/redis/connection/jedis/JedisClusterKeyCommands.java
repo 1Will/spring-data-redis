@@ -22,8 +22,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.dao.DataAccessException;
@@ -71,14 +71,14 @@ class JedisClusterKeyCommands implements RedisKeyCommands {
 			}
 		}
 
-		return Long.valueOf(
-				connection.getClusterCommandExecutor().executeMuliKeyCommand(new JedisMultiKeyClusterCommandCallback<Long>() {
+		return (long) connection.getClusterCommandExecutor()
+				.executeMuliKeyCommand(new JedisMultiKeyClusterCommandCallback<Long>() {
 
 					@Override
 					public Long doInCluster(Jedis client, byte[] key) {
 						return client.del(key);
 					}
-				}, Arrays.asList(keys)).resultsAsList().size());
+				}, Arrays.asList(keys)).resultsAsList().size();
 	}
 
 	/*
@@ -113,7 +113,7 @@ class JedisClusterKeyCommands implements RedisKeyCommands {
 					}
 				}).resultsAsList();
 
-		Set<byte[]> keys = new HashSet<byte[]>();
+		Set<byte[]> keys = new HashSet<>();
 		for (Set<byte[]> keySet : keysPerNode) {
 			keys.addAll(keySet);
 		}
@@ -144,7 +144,7 @@ class JedisClusterKeyCommands implements RedisKeyCommands {
 	 */
 	@Override
 	public Cursor<byte[]> scan(ScanOptions options) {
-		throw new InvalidDataAccessApiUsageException("Scan is not supported accros multiple nodes within a cluster");
+		throw new InvalidDataAccessApiUsageException("Scan is not supported across multiple nodes within a cluster");
 	}
 
 	/*
@@ -154,16 +154,16 @@ class JedisClusterKeyCommands implements RedisKeyCommands {
 	@Override
 	public byte[] randomKey() {
 
-		List<RedisClusterNode> nodes = new ArrayList<RedisClusterNode>(
+		List<RedisClusterNode> nodes = new ArrayList<>(
 				connection.getTopologyProvider().getTopology().getActiveMasterNodes());
-		Set<RedisNode> inspectedNodes = new HashSet<RedisNode>(nodes.size());
+		Set<RedisNode> inspectedNodes = new HashSet<>(nodes.size());
 
 		do {
 
-			RedisClusterNode node = nodes.get(new Random().nextInt(nodes.size()));
+			RedisClusterNode node = nodes.get(ThreadLocalRandom.current().nextInt(nodes.size()));
 
 			while (inspectedNodes.contains(node)) {
-				node = nodes.get(new Random().nextInt(nodes.size()));
+				node = nodes.get(ThreadLocalRandom.current().nextInt(nodes.size()));
 			}
 			inspectedNodes.add(node);
 			byte[] key = randomKey(node);

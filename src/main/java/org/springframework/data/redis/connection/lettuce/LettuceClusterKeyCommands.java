@@ -20,8 +20,8 @@ import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.connection.ClusterSlotHashUtil;
@@ -53,13 +53,13 @@ class LettuceClusterKeyCommands extends LettuceKeyCommands {
 	 */
 	@Override
 	public Cursor<byte[]> scan(long cursorId, ScanOptions options) {
-		throw new InvalidDataAccessApiUsageException("Scan is not supported accros multiple nodes within a cluster.");
+		throw new InvalidDataAccessApiUsageException("Scan is not supported across multiple nodes within a cluster.");
 	}
 
 	/*
-	* (non-Javadoc)
-	* @see org.springframework.data.redis.connection.lettuce.LettuceConnection#randomKey()
-	*/
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#randomKey()
+	 */
 	@Override
 	public byte[] randomKey() {
 
@@ -68,10 +68,10 @@ class LettuceClusterKeyCommands extends LettuceKeyCommands {
 
 		do {
 
-			RedisClusterNode node = nodes.get(new Random().nextInt(nodes.size()));
+			RedisClusterNode node = nodes.get(ThreadLocalRandom.current().nextInt(nodes.size()));
 
 			while (inspectedNodes.contains(node)) {
-				node = nodes.get(new Random().nextInt(nodes.size()));
+				node = nodes.get(ThreadLocalRandom.current().nextInt(nodes.size()));
 			}
 			inspectedNodes.add(node);
 			byte[] key = randomKey(node);

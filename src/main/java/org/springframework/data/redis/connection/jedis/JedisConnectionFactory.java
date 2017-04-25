@@ -296,7 +296,7 @@ public class JedisConnectionFactory implements InitializingBean, DisposableBean,
 
 		Assert.notNull(clusterConfig, "Cluster configuration must not be null!");
 
-		Set<HostAndPort> hostAndPort = new HashSet<HostAndPort>();
+		Set<HostAndPort> hostAndPort = new HashSet<>();
 		for (RedisNode node : clusterConfig.getClusterNodes()) {
 			hostAndPort.add(new HostAndPort(node.getHost(), node.getPort()));
 		}
@@ -626,7 +626,7 @@ public class JedisConnectionFactory implements InitializingBean, DisposableBean,
 			return Collections.emptySet();
 		}
 
-		Set<String> convertedNodes = new LinkedHashSet<String>(nodes.size());
+		Set<String> convertedNodes = new LinkedHashSet<>(nodes.size());
 		for (RedisNode node : nodes) {
 			if (node != null) {
 				convertedNodes.add(node.asString());

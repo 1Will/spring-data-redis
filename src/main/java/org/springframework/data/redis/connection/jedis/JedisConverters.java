@@ -15,6 +15,16 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.BinaryClient.LIST_POSITION;
+import redis.clients.jedis.BitOP;
+import redis.clients.jedis.GeoCoordinate;
+import redis.clients.jedis.GeoRadiusResponse;
+import redis.clients.jedis.GeoUnit;
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.SortingParams;
+import redis.clients.jedis.params.geo.GeoRadiusParam;
+import redis.clients.util.SafeEncoder;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,16 +69,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
-
-import redis.clients.jedis.BinaryClient.LIST_POSITION;
-import redis.clients.jedis.BitOP;
-import redis.clients.jedis.GeoCoordinate;
-import redis.clients.jedis.GeoRadiusResponse;
-import redis.clients.jedis.GeoUnit;
-import redis.clients.jedis.ScanParams;
-import redis.clients.jedis.SortingParams;
-import redis.clients.jedis.params.geo.GeoRadiusParam;
-import redis.clients.util.SafeEncoder;
 
 /**
  * Jedis type converters.
@@ -118,24 +118,24 @@ abstract public class JedisConverters extends Converters {
 				return source == null ? null : SafeEncoder.encode(source);
 			}
 		};
-		BYTES_LIST_TO_STRING_LIST_CONVERTER = new ListConverter<byte[], String>(BYTES_TO_STRING_CONVERTER);
+		BYTES_LIST_TO_STRING_LIST_CONVERTER = new ListConverter<>(BYTES_TO_STRING_CONVERTER);
 
 		STRING_TO_BYTES = new Converter<String, byte[]>() {
 			public byte[] convert(String source) {
 				return source == null ? null : SafeEncoder.encode(source);
 			}
 		};
-		STRING_LIST_TO_BYTE_LIST = new ListConverter<String, byte[]>(STRING_TO_BYTES);
-		STRING_SET_TO_BYTE_SET = new SetConverter<String, byte[]>(STRING_TO_BYTES);
-		STRING_MAP_TO_BYTE_MAP = new MapConverter<String, byte[]>(STRING_TO_BYTES);
+		STRING_LIST_TO_BYTE_LIST = new ListConverter<>(STRING_TO_BYTES);
+		STRING_SET_TO_BYTE_SET = new SetConverter<>(STRING_TO_BYTES);
+		STRING_MAP_TO_BYTE_MAP = new MapConverter<>(STRING_TO_BYTES);
 		TUPLE_CONVERTER = new Converter<redis.clients.jedis.Tuple, Tuple>() {
 			public Tuple convert(redis.clients.jedis.Tuple source) {
 				return source != null ? new DefaultTuple(source.getBinaryElement(), source.getScore()) : null;
 			}
 
 		};
-		TUPLE_SET_TO_TUPLE_SET = new SetConverter<redis.clients.jedis.Tuple, Tuple>(TUPLE_CONVERTER);
-		TUPLE_LIST_TO_TUPLE_LIST_CONVERTER = new ListConverter<redis.clients.jedis.Tuple, Tuple>(TUPLE_CONVERTER);
+		TUPLE_SET_TO_TUPLE_SET = new SetConverter<>(TUPLE_CONVERTER);
+		TUPLE_LIST_TO_TUPLE_LIST_CONVERTER = new ListConverter<>(TUPLE_CONVERTER);
 		PLUS_BYTES = toBytes("+");
 		MINUS_BYTES = toBytes("-");
 		POSITIVE_INFINITY_BYTES = toBytes("+inf");
@@ -214,7 +214,7 @@ abstract public class JedisConverters extends Converters {
 				return geoCoordinate != null ? new Point(geoCoordinate.getLongitude(), geoCoordinate.getLatitude()) : null;
 			}
 		};
-		LIST_GEO_COORDINATE_TO_POINT_CONVERTER = new ListConverter<redis.clients.jedis.GeoCoordinate, Point>(
+		LIST_GEO_COORDINATE_TO_POINT_CONVERTER = new ListConverter<>(
 				GEO_COORDINATE_TO_POINT_CONVERTER);
 	}
 
@@ -322,7 +322,7 @@ abstract public class JedisConverters extends Converters {
 			return Collections.emptyList();
 		}
 
-		List<RedisServer> sentinels = new ArrayList<RedisServer>();
+		List<RedisServer> sentinels = new ArrayList<>();
 		for (Map<String, String> info : source) {
 			sentinels.add(RedisServer.newServerFrom(Converters.toProperties(info)));
 		}
@@ -642,7 +642,7 @@ abstract public class JedisConverters extends Converters {
 			@Override
 			public GeoResults<GeoLocation<byte[]>> convert(List<GeoRadiusResponse> source) {
 
-				List<GeoResult<GeoLocation<byte[]>>> results = new ArrayList<GeoResult<GeoLocation<byte[]>>>(source.size());
+				List<GeoResult<GeoLocation<byte[]>>> results = new ArrayList<>(source.size());
 
 				Converter<redis.clients.jedis.GeoRadiusResponse, GeoResult<GeoLocation<byte[]>>> converter = GeoResultConverterFactory.INSTANCE
 						.forMetric(metric);
@@ -650,7 +650,7 @@ abstract public class JedisConverters extends Converters {
 					results.add(converter.convert(result));
 				}
 
-				return new GeoResults<GeoLocation<byte[]>>(results, metric);
+				return new GeoResults<>(results, metric);
 			}
 		}
 	}
@@ -681,7 +681,7 @@ abstract public class JedisConverters extends Converters {
 
 				Point point = GEO_COORDINATE_TO_POINT_CONVERTER.convert(source.getCoordinate());
 
-				return new GeoResult<GeoLocation<byte[]>>(new GeoLocation<byte[]>(source.getMember(), point),
+				return new GeoResult<>(new GeoLocation<>(source.getMember(), point),
 						new Distance(source.getDistance(), metric));
 			}
 		}

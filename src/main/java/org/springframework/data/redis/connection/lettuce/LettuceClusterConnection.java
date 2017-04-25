@@ -40,24 +40,11 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.PassThroughExceptionTranslationStrategy;
-import org.springframework.data.redis.connection.ClusterCommandExecutor;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.ClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.MultiKeyClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
-import org.springframework.data.redis.connection.ClusterInfo;
-import org.springframework.data.redis.connection.ClusterNodeResourceProvider;
-import org.springframework.data.redis.connection.ClusterTopology;
-import org.springframework.data.redis.connection.ClusterTopologyProvider;
-import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
-import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.connection.RedisHashCommands;
-import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
-import org.springframework.data.redis.connection.RedisKeyCommands;
-import org.springframework.data.redis.connection.RedisListCommands;
-import org.springframework.data.redis.connection.RedisSetCommands;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.RedisZSetCommands;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
@@ -417,7 +404,7 @@ public class LettuceClusterConnection extends LettuceConnection
 	@Override
 	public void clusterForget(final RedisClusterNode node) {
 
-		List<RedisClusterNode> nodes = new ArrayList<RedisClusterNode>(clusterGetNodes());
+		List<RedisClusterNode> nodes = new ArrayList<>(clusterGetNodes());
 		final RedisClusterNode nodeToRemove = topologyProvider.getTopology().lookup(node);
 		nodes.remove(nodeToRemove);
 
@@ -806,7 +793,7 @@ public class LettuceClusterConnection extends LettuceConnection
 					}
 				}).getResults();
 
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (NodeResult<List<String>> entry : mapResult) {
 
 			String prefix = entry.getNode().asString();
@@ -959,7 +946,7 @@ public class LettuceClusterConnection extends LettuceConnection
 			}
 		}).resultsAsList();
 
-		ArrayList<RedisClientInfo> result = new ArrayList<RedisClientInfo>();
+		ArrayList<RedisClientInfo> result = new ArrayList<>();
 		for (String infos : map) {
 			result.addAll(LettuceConverters.toListOfRedisClientInformation(infos));
 		}
@@ -999,7 +986,7 @@ public class LettuceClusterConnection extends LettuceConnection
 					}
 				}, topologyProvider.getTopology().getActiveMasterNodes()).getResults();
 
-		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<RedisClusterNode, Collection<RedisClusterNode>>();
+		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<>();
 
 		for (NodeResult<Collection<RedisClusterNode>> nodeResult : nodeResults) {
 			result.put(nodeResult.getNode(), nodeResult.getValue());
@@ -1114,7 +1101,7 @@ public class LettuceClusterConnection extends LettuceConnection
 		@Override
 		public ClusterTopology getTopology() {
 			return new ClusterTopology(
-					new LinkedHashSet<RedisClusterNode>(LettuceConverters.partitionsToClusterNodes(client.getPartitions())));
+					new LinkedHashSet<>(LettuceConverters.partitionsToClusterNodes(client.getPartitions())));
 		}
 	}
 

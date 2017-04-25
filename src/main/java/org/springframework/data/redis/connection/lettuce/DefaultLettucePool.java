@@ -117,7 +117,7 @@ public class DefaultLettucePool implements LettucePool, InitializingBean {
 		}
 
 		client.setDefaultTimeout(timeout, TimeUnit.MILLISECONDS);
-		this.internalPool = new GenericObjectPool<StatefulConnection<byte[], byte[]>>(new LettuceFactory(client, dbIndex),
+		this.internalPool = new GenericObjectPool<>(new LettuceFactory(client, dbIndex),
 				poolConfig);
 	}
 
@@ -399,7 +399,7 @@ public class DefaultLettucePool implements LettucePool, InitializingBean {
 		 */
 		@Override
 		public PooledObject<StatefulConnection<byte[], byte[]>> wrap(StatefulConnection<byte[], byte[]> obj) {
-			return new DefaultPooledObject<StatefulConnection<byte[], byte[]>>(obj);
+			return new DefaultPooledObject<>(obj);
 		}
 	}
 }

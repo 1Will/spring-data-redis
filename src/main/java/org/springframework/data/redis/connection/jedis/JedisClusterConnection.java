@@ -37,33 +37,11 @@ import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.ClusterStateFailureException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.PassThroughExceptionTranslationStrategy;
-import org.springframework.data.redis.connection.ClusterCommandExecutor;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.ClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.MultiKeyClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
-import org.springframework.data.redis.connection.ClusterInfo;
-import org.springframework.data.redis.connection.ClusterNodeResourceProvider;
-import org.springframework.data.redis.connection.ClusterTopology;
-import org.springframework.data.redis.connection.ClusterTopologyProvider;
-import org.springframework.data.redis.connection.DefaultedRedisClusterConnection;
-import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.RedisClusterConnection;
-import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
-import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.connection.RedisHashCommands;
-import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
-import org.springframework.data.redis.connection.RedisKeyCommands;
-import org.springframework.data.redis.connection.RedisListCommands;
-import org.springframework.data.redis.connection.RedisNode;
-import org.springframework.data.redis.connection.RedisPipelineException;
-import org.springframework.data.redis.connection.RedisSentinelConnection;
-import org.springframework.data.redis.connection.RedisSetCommands;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
-import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
@@ -455,7 +433,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public Long lastSave() {
 
-		List<Long> result = new ArrayList<Long>(
+		List<Long> result = new ArrayList<>(
 				clusterCommandExecutor.executeCommandOnAllNodes(new JedisClusterCommandCallback<Long>() {
 
 					@Override
@@ -644,9 +622,9 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 					}
 				}).getResults();
 
-		for (NodeResult<Properties> nodePorperties : nodeResults) {
-			for (Entry<Object, Object> entry : nodePorperties.getValue().entrySet()) {
-				infos.put(nodePorperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
+		for (NodeResult<Properties> nodeProperties : nodeResults) {
+			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
+				infos.put(nodeProperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
 			}
 		}
 
@@ -688,9 +666,9 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 					}
 				}).getResults();
 
-		for (NodeResult<Properties> nodePorperties : nodeResults) {
-			for (Entry<Object, Object> entry : nodePorperties.getValue().entrySet()) {
-				infos.put(nodePorperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
+		for (NodeResult<Properties> nodeProperties : nodeResults) {
+			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
+				infos.put(nodeProperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
 			}
 		}
 
@@ -778,7 +756,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 					}
 				}).getResults();
 
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (NodeResult<List<String>> entry : mapResult) {
 
 			String prefix = entry.getNode().asString();
@@ -965,7 +943,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 			}
 		}).resultsAsList();
 
-		ArrayList<RedisClientInfo> result = new ArrayList<RedisClientInfo>();
+		ArrayList<RedisClientInfo> result = new ArrayList<>();
 		for (String infos : map) {
 			result.addAll(JedisConverters.toListOfRedisClientInformation(infos));
 		}
@@ -1217,7 +1195,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public void clusterForget(final RedisClusterNode node) {
 
-		Set<RedisClusterNode> nodes = new LinkedHashSet<RedisClusterNode>(
+		Set<RedisClusterNode> nodes = new LinkedHashSet<>(
 				topologyProvider.getTopology().getActiveMasterNodes());
 		final RedisClusterNode nodeToRemove = topologyProvider.getTopology().lookup(node);
 		nodes.remove(nodeToRemove);
@@ -1353,7 +1331,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 					}
 				}, topologyProvider.getTopology().getActiveMasterNodes()).getResults();
 
-		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<RedisClusterNode, Collection<RedisClusterNode>>();
+		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<>();
 
 		for (NodeResult<Collection<RedisClusterNode>> nodeResult : nodeResults) {
 			result.put(nodeResult.getNode(), nodeResult.getValue());
@@ -1607,7 +1585,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 				return cached;
 			}
 
-			Map<String, Exception> errors = new LinkedHashMap<String, Exception>();
+			Map<String, Exception> errors = new LinkedHashMap<>();
 
 			for (Entry<String, JedisPool> entry : cluster.getClusterNodes().entrySet()) {
 

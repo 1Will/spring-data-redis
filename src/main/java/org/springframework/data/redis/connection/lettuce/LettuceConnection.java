@@ -34,20 +34,7 @@ import io.lettuce.core.cluster.api.async.RedisClusterAsyncCommands;
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.codec.RedisCodec;
-import io.lettuce.core.output.BooleanOutput;
-import io.lettuce.core.output.ByteArrayOutput;
-import io.lettuce.core.output.CommandOutput;
-import io.lettuce.core.output.DateOutput;
-import io.lettuce.core.output.DoubleOutput;
-import io.lettuce.core.output.IntegerOutput;
-import io.lettuce.core.output.KeyListOutput;
-import io.lettuce.core.output.KeyValueOutput;
-import io.lettuce.core.output.MapOutput;
-import io.lettuce.core.output.MultiOutput;
-import io.lettuce.core.output.StatusOutput;
-import io.lettuce.core.output.ValueListOutput;
-import io.lettuce.core.output.ValueOutput;
-import io.lettuce.core.output.ValueSetOutput;
+import io.lettuce.core.output.*;
 import io.lettuce.core.protocol.Command;
 import io.lettuce.core.protocol.CommandArgs;
 import io.lettuce.core.protocol.CommandType;
@@ -76,23 +63,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.FallbackExceptionTranslationStrategy;
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.connection.AbstractRedisConnection;
-import org.springframework.data.redis.connection.FutureResult;
-import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.connection.RedisHashCommands;
-import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
-import org.springframework.data.redis.connection.RedisKeyCommands;
-import org.springframework.data.redis.connection.RedisListCommands;
-import org.springframework.data.redis.connection.RedisNode;
-import org.springframework.data.redis.connection.RedisPipelineException;
-import org.springframework.data.redis.connection.RedisSentinelConnection;
-import org.springframework.data.redis.connection.RedisSetCommands;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
-import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.Subscription;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.convert.TransactionResultConverter;
 import org.springframework.data.redis.core.RedisCommand;
 import org.springframework.data.redis.core.ScanOptions;
@@ -134,7 +105,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 	private boolean isMulti = false;
 	private boolean isPipelined = false;
 	private List<LettuceResult> ppline;
-	private Queue<FutureResult<?>> txResults = new LinkedList<FutureResult<?>>();
+	private Queue<FutureResult<?>> txResults = new LinkedList<>();
 	private AbstractRedisClient client;
 	private volatile LettuceSubscription subscription;
 	private LettucePool pool;
@@ -412,7 +383,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 
 			validateCommandIfRunningInTransactionMode(commandType, args);
 
-			CommandArgs<byte[], byte[]> cmdArg = new CommandArgs<byte[], byte[]>(CODEC);
+			CommandArgs<byte[], byte[]> cmdArg = new CommandArgs<>(CODEC);
 			if (!ObjectUtils.isEmpty(args)) {
 				cmdArg.addKeys(args);
 			}
@@ -497,7 +468,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 	public void openPipeline() {
 		if (!isPipelined) {
 			isPipelined = true;
-			ppline = new ArrayList<LettuceResult>();
+			ppline = new ArrayList<>();
 		}
 	}
 
@@ -505,7 +476,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 
 		if (isPipelined) {
 			isPipelined = false;
-			List<io.lettuce.core.protocol.RedisCommand<?, ?, ?>> futures = new ArrayList<io.lettuce.core.protocol.RedisCommand<?, ?, ?>>();
+			List<io.lettuce.core.protocol.RedisCommand<?, ?, ?>> futures = new ArrayList<>();
 			for (LettuceResult result : ppline) {
 				futures.add(result.getResultHolder());
 			}
@@ -514,7 +485,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 				boolean done = LettuceFutures.awaitAll(timeout, TimeUnit.MILLISECONDS,
 						futures.toArray(new RedisFuture[futures.size()]));
 
-				List<Object> results = new ArrayList<Object>(futures.size());
+				List<Object> results = new ArrayList<>(futures.size());
 
 				Exception problem = null;
 
@@ -1245,7 +1216,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 	}
 
 	/*
-		* @see org.springframework.data.redis.connection.RedisServerCommands#slaveOfNoOne()
+	 * @see org.springframework.data.redis.connection.RedisServerCommands#slaveOfNoOne()
 	 */
 	@Override
 	public void slaveOfNoOne() {
@@ -1499,10 +1470,10 @@ public class LettuceConnection extends AbstractRedisConnection {
 	static class TypeHints {
 
 		@SuppressWarnings("rawtypes") //
-		private static final Map<CommandType, Class<? extends CommandOutput>> COMMAND_OUTPUT_TYPE_MAPPING = new HashMap<CommandType, Class<? extends CommandOutput>>();
+		private static final Map<CommandType, Class<? extends CommandOutput>> COMMAND_OUTPUT_TYPE_MAPPING = new HashMap<>();
 
 		@SuppressWarnings("rawtypes") //
-		private static final Map<Class<?>, Constructor<CommandOutput>> CONSTRUCTORS = new ConcurrentHashMap<Class<?>, Constructor<CommandOutput>>();
+		private static final Map<Class<?>, Constructor<CommandOutput>> CONSTRUCTORS = new ConcurrentHashMap<>();
 
 		{
 			// INTEGER
@@ -1660,7 +1631,7 @@ public class LettuceConnection extends AbstractRedisConnection {
 		 */
 		@SuppressWarnings("rawtypes")
 		public CommandOutput getTypeHint(CommandType type) {
-			return getTypeHint(type, new ByteArrayOutput<byte[], byte[]>(CODEC));
+			return getTypeHint(type, new ByteArrayOutput<>(CODEC));
 		}
 
 		/**

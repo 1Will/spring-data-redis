@@ -34,6 +34,7 @@ public interface RedisConnection extends RedisCommands {
 	 * Get {@link RedisGeoCommands}.
 	 *
 	 * @return never {@literal null}.
+	 * @since 2.0
 	 */
 	default RedisGeoCommands geoCommands() {
 		return this;
@@ -53,6 +54,7 @@ public interface RedisConnection extends RedisCommands {
 	 * Get {@link RedisHyperLogLogCommands}.
 	 *
 	 * @return never {@literal null}.
+	 * @since 2.0
 	 */
 	default RedisHyperLogLogCommands hyperLogLogCommands() {
 		return this;

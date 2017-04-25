@@ -15,17 +15,8 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.BinaryJedis;
-import redis.clients.jedis.BinaryJedisPubSub;
-import redis.clients.jedis.Builder;
-import redis.clients.jedis.Client;
-import redis.clients.jedis.Connection;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.*;
 import redis.clients.jedis.Protocol.Command;
-import redis.clients.jedis.Queable;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.util.Pool;
 
@@ -44,22 +35,7 @@ import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.FallbackExceptionTranslationStrategy;
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.connection.AbstractRedisConnection;
-import org.springframework.data.redis.connection.FutureResult;
-import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.connection.RedisHashCommands;
-import org.springframework.data.redis.connection.RedisHyperLogLogCommands;
-import org.springframework.data.redis.connection.RedisKeyCommands;
-import org.springframework.data.redis.connection.RedisListCommands;
-import org.springframework.data.redis.connection.RedisNode;
-import org.springframework.data.redis.connection.RedisPipelineException;
-import org.springframework.data.redis.connection.RedisSetCommands;
-import org.springframework.data.redis.connection.RedisStringCommands;
-import org.springframework.data.redis.connection.RedisSubscribedConnectionException;
-import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.Subscription;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.convert.TransactionResultConverter;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
@@ -130,8 +106,8 @@ public class JedisConnection extends AbstractRedisConnection {
 	private final int dbIndex;
 	private final String clientName;
 	private boolean convertPipelineAndTxResults = true;
-	private List<FutureResult<Response<?>>> pipelinedResults = new ArrayList<FutureResult<Response<?>>>();
-	private Queue<FutureResult<Response<?>>> txResults = new LinkedList<FutureResult<Response<?>>>();
+	private List<FutureResult<Response<?>>> pipelinedResults = new ArrayList<>();
+	private Queue<FutureResult<Response<?>>> txResults = new LinkedList<>();
 
 	class JedisResult extends FutureResult<Response<?>> {
 		public <T> JedisResult(Response<T> resultHolder, Converter<T, ?> converter) {
@@ -305,7 +281,7 @@ public class JedisConnection extends AbstractRedisConnection {
 	public Object execute(String command, byte[]... args) {
 		Assert.hasText(command, "a valid command needs to be specified");
 		try {
-			List<byte[]> mArgs = new ArrayList<byte[]>();
+			List<byte[]> mArgs = new ArrayList<>();
 			if (!ObjectUtils.isEmpty(args)) {
 				Collections.addAll(mArgs, args);
 			}
@@ -467,7 +443,7 @@ public class JedisConnection extends AbstractRedisConnection {
 	}
 
 	private List<Object> convertPipelineResults() {
-		List<Object> results = new ArrayList<Object>();
+		List<Object> results = new ArrayList<>();
 		pipeline.sync();
 		Exception cause = null;
 		for (FutureResult<Response<?>> result : pipelinedResults) {
@@ -871,8 +847,8 @@ public class JedisConnection extends AbstractRedisConnection {
 	public List<Object> exec() {
 		try {
 			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.exec(), new TransactionResultConverter<Response<?>>(
-						new LinkedList<FutureResult<Response<?>>>(txResults), JedisConverters.exceptionConverter())));
+				pipeline(new JedisResult(pipeline.exec(),
+						new TransactionResultConverter<>(new LinkedList<>(txResults), JedisConverters.exceptionConverter())));
 				return null;
 			}
 
@@ -881,7 +857,7 @@ public class JedisConnection extends AbstractRedisConnection {
 			}
 			List<Object> results = transaction.exec();
 			return convertPipelineAndTxResults && !CollectionUtils.isEmpty(results)
-					? new TransactionResultConverter<Response<?>>(txResults, JedisConverters.exceptionConverter())
+					? new TransactionResultConverter<>(txResults, JedisConverters.exceptionConverter())
 							.convert(results)
 					: results;
 		} catch (Exception ex) {

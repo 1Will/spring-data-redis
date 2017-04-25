@@ -31,9 +31,11 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.types.Expiration;
 
 /**
- * {@link DefaultedRedisConnection} provides method delegates to {@code Redis*Command} interfaces accessible via {@link RedisConnection}.
- * This allows us to maintain backwards compatibility while moving the actual implementation and stay in sync with {@link ReactiveRedisConnection}.
- * Going forward the {@link RedisCommands} extension is likely to be removed from {@link RedisConnection}.
+ * {@link DefaultedRedisConnection} provides method delegates to {@code Redis*Command} interfaces accessible via
+ * {@link RedisConnection}. This allows us to maintain backwards compatibility while moving the actual implementation
+ * and stay in sync with {@link ReactiveRedisConnection}. Going forward the {@link RedisCommands} extension is likely to
+ * be removed from {@link RedisConnection}.
+ * 
  * @author Christoph Strobl
  * @since 2.0
  */
