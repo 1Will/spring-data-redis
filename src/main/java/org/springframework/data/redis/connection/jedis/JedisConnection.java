@@ -1,12 +1,12 @@
 /*
  * Copyright 2011-2017 the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Properties;
 import java.util.Queue;
 
 import org.springframework.core.convert.converter.Converter;
@@ -37,7 +36,6 @@ import org.springframework.data.redis.FallbackExceptionTranslationStrategy;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.convert.TransactionResultConverter;
-import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
@@ -64,8 +62,6 @@ public class JedisConnection extends AbstractRedisConnection {
 	private static final Field CLIENT_FIELD;
 	private static final Method SEND_COMMAND;
 	private static final Method GET_RESPONSE;
-
-	private static final String SHUTDOWN_SCRIPT = "return redis.call('SHUTDOWN','%s')";
 
 	private static final ExceptionTranslationStrategy EXCEPTION_TRANSLATION = new FallbackExceptionTranslationStrategy(
 			JedisConverters.exceptionConverter());
@@ -200,7 +196,7 @@ public class JedisConnection extends AbstractRedisConnection {
 
 		return exception;
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#keyCommands()
@@ -262,6 +258,15 @@ public class JedisConnection extends AbstractRedisConnection {
 	@Override
 	public RedisGeoCommands geoCommands() {
 		return new JedisGeoCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#serverCommands()
+	 */
+	@Override
+	public RedisServerCommands serverCommands() {
+		return new JedisServerCommands(this);
 	}
 
 	/*
@@ -485,300 +490,6 @@ public class JedisConnection extends AbstractRedisConnection {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#dbSize()
-	 */
-	@Override
-	public Long dbSize() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.dbSize()));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.dbSize()));
-				return null;
-			}
-			return jedis.dbSize();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushDb()
-	 */
-	@Override
-	public void flushDb() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.flushDB()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.flushDB()));
-				return;
-			}
-			jedis.flushDB();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushAll()
-	 */
-	@Override
-	public void flushAll() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.flushAll()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.flushAll()));
-				return;
-			}
-			jedis.flushAll();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgSave()
-	 */
-	@Override
-	public void bgSave() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.bgsave()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.bgsave()));
-				return;
-			}
-			jedis.bgsave();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgReWriteAof()
-	 */
-	@Override
-	public void bgReWriteAof() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.bgrewriteaof()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.bgrewriteaof()));
-				return;
-			}
-			jedis.bgrewriteaof();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/**
-	 * @deprecated As of 1.3, use {@link #bgReWriteAof}.
-	 */
-	@Deprecated
-	public void bgWriteAof() {
-		bgReWriteAof();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#save()
-	 */
-	@Override
-	public void save() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.save()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.save()));
-				return;
-			}
-			jedis.save();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#getConfig(java.lang.String)
-	 */
-	@Override
-	public List<String> getConfig(String param) {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.configGet(param)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.configGet(param)));
-				return null;
-			}
-			return jedis.configGet(param);
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#info()
-	 */
-	@Override
-	public Properties info() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.info(), JedisConverters.stringToProps()));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.info(), JedisConverters.stringToProps()));
-				return null;
-			}
-			return JedisConverters.toProperties(jedis.info());
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#info(java.lang.String)
-	 */
-	@Override
-	public Properties info(String section) {
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			return JedisConverters.toProperties(jedis.info(section));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#lastSave()
-	 */
-	@Override
-	public Long lastSave() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.lastsave()));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.lastsave()));
-				return null;
-			}
-			return jedis.lastsave();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#setConfig(java.lang.String, java.lang.String)
-	 */
-	@Override
-	public void setConfig(String param, String value) {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.configSet(param, value)));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.configSet(param, value)));
-				return;
-			}
-			jedis.configSet(param, value);
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#resetConfigStats()
-	 */
-	@Override
-	public void resetConfigStats() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.configResetStat()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.configResetStat()));
-				return;
-			}
-			jedis.configResetStat();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#shutdown()
-	 */
-	@Override
-	public void shutdown() {
-		try {
-			if (isPipelined()) {
-				pipeline(new JedisStatusResult(pipeline.shutdown()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisStatusResult(transaction.shutdown()));
-				return;
-			}
-			jedis.shutdown();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	* (non-Javadoc)
-	* @see org.springframework.data.redis.connection.RedisServerCommands#shutdown(org.springframework.data.redis.connection.RedisServerCommands.ShutdownOption)
-	*/
-	@Override
-	public void shutdown(ShutdownOption option) {
-
-		if (option == null) {
-			shutdown();
-			return;
-		}
-
-		eval(String.format(SHUTDOWN_SCRIPT, option.name()).getBytes(), ReturnType.STATUS, 0);
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnectionCommands#echo(byte[])
 	 */
 	@Override
@@ -857,8 +568,7 @@ public class JedisConnection extends AbstractRedisConnection {
 			}
 			List<Object> results = transaction.exec();
 			return convertPipelineAndTxResults && !CollectionUtils.isEmpty(results)
-					? new TransactionResultConverter<>(txResults, JedisConverters.exceptionConverter())
-							.convert(results)
+					? new TransactionResultConverter<>(txResults, JedisConverters.exceptionConverter()).convert(results)
 					: results;
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
@@ -880,7 +590,6 @@ public class JedisConnection extends AbstractRedisConnection {
 		return jedis;
 	}
 
-	
 	JedisResult newJedisResult(Response<?> response) {
 		return new JedisResult(response);
 	}
@@ -1200,122 +909,6 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#time()
-	 */
-	@Override
-	public Long time() {
-
-		try {
-
-			if (isPipelined()) {
-				pipeline(new JedisResult(pipeline.time(), JedisConverters.toTimeConverter()));
-				return null;
-			}
-
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.time(), JedisConverters.toTimeConverter()));
-				return null;
-			}
-			return JedisConverters.toTimeConverter().convert(jedis.time());
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#killClient(byte[])
-	 */
-	@Override
-	public void killClient(String host, int port) {
-
-		Assert.hasText(host, "Host for 'CLIENT KILL' must not be 'null' or 'empty'.");
-
-		if (isQueueing() || isPipelined()) {
-			throw new UnsupportedOperationException("'CLIENT KILL' is not supported in transaction / pipline mode.");
-		}
-
-		try {
-			this.jedis.clientKill(String.format("%s:%s", host, port));
-		} catch (Exception e) {
-			throw convertJedisAccessException(e);
-		}
-	}
-
-	/*
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#slaveOf(java.lang.String, int)
-	 */
-	@Override
-	public void slaveOf(String host, int port) {
-
-		Assert.hasText(host, "Host must not be null for 'SLAVEOF' command.");
-		if (isQueueing() || isPipelined()) {
-			throw new UnsupportedOperationException("'SLAVEOF' cannot be called in pipline / transaction mode.");
-		}
-		try {
-			this.jedis.slaveof(host, port);
-		} catch (Exception e) {
-			throw convertJedisAccessException(e);
-		}
-	}
-
-	/*
-	* @see org.springframework.data.redis.connection.RedisServerCommands#setClientName(java.lang.String)
-	*/
-	@Override
-	public void setClientName(byte[] name) {
-
-		if (isPipelined() || isQueueing()) {
-			throw new UnsupportedOperationException("'CLIENT SETNAME' is not suppored in transacton / pipeline mode.");
-		}
-
-		jedis.clientSetname(name);
-	}
-
-	/*
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#getClientName()
-	 */
-	@Override
-	public String getClientName() {
-
-		if (isPipelined() || isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-
-		return jedis.clientGetname();
-	}
-
-	/*
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#getClientName()
-	 */
-	@Override
-	public List<RedisClientInfo> getClientList() {
-
-		if (isQueueing() || isPipelined()) {
-			throw new UnsupportedOperationException("'CLIENT LIST' is not supported in in pipeline / multi mode.");
-		}
-		return JedisConverters.toListOfRedisClientInformation(this.jedis.clientList());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#slaveOfNoOne()
-	 */
-	@Override
-	public void slaveOfNoOne() {
-
-		if (isQueueing() || isPipelined()) {
-			throw new UnsupportedOperationException("'SLAVEOF' cannot be called in pipline / transaction mode.");
-		}
-		try {
-			this.jedis.slaveofNoOne();
-		} catch (Exception e) {
-			throw convertJedisAccessException(e);
-		}
-	}
-
 	/**
 	 * Specifies if pipelined results should be converted to the expected data type. If false, results of
 	 * {@link #closePipeline()} and {@link #exec()} will be of the type returned by the Jedis driver
@@ -1370,43 +963,6 @@ public class JedisConnection extends AbstractRedisConnection {
 		}
 
 		return jedis;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#migrate(byte[], org.springframework.data.redis.connection.RedisNode, int, org.springframework.data.redis.connection.RedisServerCommands.MigrateOption)
-	 */
-	@Override
-	public void migrate(byte[] key, RedisNode target, int dbIndex, MigrateOption option) {
-		migrate(key, target, dbIndex, option, Long.MAX_VALUE);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisServerCommands#migrate(byte[], org.springframework.data.redis.connection.RedisNode, int, org.springframework.data.redis.connection.RedisServerCommands.MigrateOption, long)
-	 */
-	@Override
-	public void migrate(byte[] key, RedisNode target, int dbIndex, MigrateOption option, long timeout) {
-
-		final int timeoutToUse = timeout <= Integer.MAX_VALUE ? (int) timeout : Integer.MAX_VALUE;
-
-		try {
-			if (isPipelined()) {
-
-				pipeline(new JedisResult(
-						pipeline.migrate(JedisConverters.toBytes(target.getHost()), target.getPort(), key, dbIndex, timeoutToUse)));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new JedisResult(transaction.migrate(JedisConverters.toBytes(target.getHost()), target.getPort(),
-						key, dbIndex, timeoutToUse)));
-				return;
-			}
-			jedis.migrate(JedisConverters.toBytes(target.getHost()), target.getPort(), key, dbIndex, timeoutToUse);
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-
 	}
 
 }

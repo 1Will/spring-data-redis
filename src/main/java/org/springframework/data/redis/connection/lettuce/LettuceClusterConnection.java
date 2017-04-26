@@ -31,8 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 
 import org.springframework.beans.DirectFieldAccessor;
@@ -46,9 +44,7 @@ import org.springframework.data.redis.connection.ClusterCommandExecutor.MultiKey
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
 import org.springframework.data.redis.connection.convert.Converters;
-import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -57,7 +53,7 @@ import org.springframework.util.ObjectUtils;
  * @since 1.7
  */
 public class LettuceClusterConnection extends LettuceConnection
-		implements org.springframework.data.redis.connection.RedisClusterConnection {
+		implements DefaultedRedisClusterConnection {
 
 	static final ExceptionTranslationStrategy exceptionConverter = new PassThroughExceptionTranslationStrategy(
 			new LettuceExceptionConverter());
@@ -69,7 +65,7 @@ public class LettuceClusterConnection extends LettuceConnection
 
 	/**
 	 * Creates new {@link LettuceClusterConnection} using {@link RedisClusterClient}.
-	 * 
+	 *
 	 * @param clusterClient must not be {@literal null}.
 	 */
 	public LettuceClusterConnection(RedisClusterClient clusterClient) {
@@ -147,130 +143,9 @@ public class LettuceClusterConnection extends LettuceConnection
 		return new LettuceClusterZSetCommands(this);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#flushAll()
-	 */
 	@Override
-	public void flushAll() {
-
-		clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.flushall();
-			}
-		});
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#flushDb()
-	 */
-	@Override
-	public void flushDb() {
-
-		clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.flushdb();
-			}
-		});
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#dbSize()
-	 */
-	@Override
-	public Long dbSize() {
-
-		Collection<Long> dbSizes = clusterCommandExecutor
-				.executeCommandOnAllNodes(new LettuceClusterCommandCallback<Long>() {
-
-					@Override
-					public Long doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.dbsize();
-					}
-
-				}).resultsAsList();
-
-		if (CollectionUtils.isEmpty(dbSizes)) {
-			return 0L;
-		}
-
-		Long size = 0L;
-		for (Long value : dbSizes) {
-			size += value;
-		}
-		return size;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#info()
-	 */
-	@Override
-	public Properties info() {
-
-		Properties infos = new Properties();
-
-		List<NodeResult<Properties>> nodeResults = clusterCommandExecutor
-				.executeCommandOnAllNodes(new LettuceClusterCommandCallback<Properties>() {
-
-					@Override
-					public Properties doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return LettuceConverters.toProperties(client.info());
-					}
-				}).getResults();
-
-		for (NodeResult<Properties> nodePorperties : nodeResults) {
-			for (Entry<Object, Object> entry : nodePorperties.getValue().entrySet()) {
-				infos.put(nodePorperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
-			}
-		}
-
-		return infos;
-	}
-
-	@Override
-	public Properties info(final String section) {
-
-		Properties infos = new Properties();
-		List<NodeResult<Properties>> nodeResults = clusterCommandExecutor
-				.executeCommandOnAllNodes(new LettuceClusterCommandCallback<Properties>() {
-
-					@Override
-					public Properties doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return LettuceConverters.toProperties(client.info(section));
-					}
-				}).getResults();
-
-		for (NodeResult<Properties> nodePorperties : nodeResults) {
-			for (Entry<Object, Object> entry : nodePorperties.getValue().entrySet()) {
-				infos.put(nodePorperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
-			}
-		}
-
-		return infos;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#info(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String)
-	 */
-	@Override
-	public Properties info(RedisClusterNode node, final String section) {
-
-		return LettuceConverters
-				.toProperties(clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.info(section);
-					}
-				}, node).getValue());
+	public RedisClusterServerCommands serverCommands() {
+		return new LettuceClusterServerCommands(this);
 	}
 
 	/*
@@ -558,137 +433,6 @@ public class LettuceClusterConnection extends LettuceConnection
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#bgReWriteAof(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void bgReWriteAof(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.bgrewriteaof();
-			}
-		}, node);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#bgSave(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void bgSave(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.bgsave();
-			}
-		}, node);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#lastSave(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public Long lastSave(RedisClusterNode node) {
-
-		return clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<Long>() {
-
-			@Override
-			public Long doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.lastsave().getTime();
-			}
-		}, node).getValue();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#save(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void save(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.save();
-			}
-		}, node);
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#dbSize(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public Long dbSize(RedisClusterNode node) {
-
-		return clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<Long>() {
-
-			@Override
-			public Long doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.dbsize();
-			}
-		}, node).getValue();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#flushDb(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void flushDb(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.flushdb();
-			}
-		}, node);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#flushAll(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void flushAll(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.flushall();
-			}
-		}, node);
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#info(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public Properties info(RedisClusterNode node) {
-
-		return LettuceConverters
-				.toProperties(clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.info();
-					}
-				}, node).getValue());
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterConnection#keys(org.springframework.data.redis.connection.RedisClusterNode, byte[])
 	 */
 	@Override
@@ -698,23 +442,6 @@ public class LettuceClusterConnection extends LettuceConnection
 
 	public byte[] randomKey(RedisClusterNode node) {
 		return doGetClusterKeyCommands().randomKey(node);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#shutdown(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void shutdown(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<Void>() {
-
-			@Override
-			public Void doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				client.shutdown(true);
-				return null;
-			}
-		}, node);
 	}
 
 	/*
@@ -774,200 +501,6 @@ public class LettuceClusterConnection extends LettuceConnection
 	@Override
 	public void multi() {
 		throw new InvalidDataAccessApiUsageException("MULTI is currently not supported in cluster mode.");
-	}
-
-	/*
-	 *
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#getConfig(java.lang.String)
-	 */
-	@Override
-	public List<String> getConfig(final String pattern) {
-
-		List<NodeResult<List<String>>> mapResult = clusterCommandExecutor
-				.executeCommandOnAllNodes(new LettuceClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.configGet(pattern);
-					}
-				}).getResults();
-
-		List<String> result = new ArrayList<>();
-		for (NodeResult<List<String>> entry : mapResult) {
-
-			String prefix = entry.getNode().asString();
-			int i = 0;
-			for (String value : entry.getValue()) {
-				result.add((i++ % 2 == 0 ? (prefix + ".") : "") + value);
-			}
-		}
-
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#getConfig(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String)
-	 */
-	@Override
-	public List<String> getConfig(RedisClusterNode node, final String pattern) {
-
-		return clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<List<String>>() {
-
-			@Override
-			public List<String> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.configGet(pattern);
-			}
-		}, node).getValue();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#setConfig(java.lang.String, java.lang.String)
-	 */
-	@Override
-	public void setConfig(final String param, final String value) {
-
-		clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.configSet(param, value);
-			}
-		});
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#setConfig(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public void setConfig(RedisClusterNode node, final String param, final String value) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.configSet(param, value);
-			}
-		}, node);
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#resetConfigStats()
-	 */
-	@Override
-	public void resetConfigStats() {
-
-		clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.configResetstat();
-			}
-		});
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#resetConfigStats(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public void resetConfigStats(RedisClusterNode node) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.configResetstat();
-			}
-		}, node);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#time()
-	 */
-	@Override
-	public Long time() {
-
-		return convertListOfStringToTime(
-				clusterCommandExecutor.executeCommandOnArbitraryNode(new LettuceClusterCommandCallback<List<byte[]>>() {
-
-					@Override
-					public List<byte[]> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.time();
-					}
-				}).getValue());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#time(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public Long time(RedisClusterNode node) {
-
-		return convertListOfStringToTime(
-				clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<List<byte[]>>() {
-
-					@Override
-					public List<byte[]> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.time();
-					}
-				}, node).getValue());
-	}
-
-	private Long convertListOfStringToTime(List<byte[]> serverTimeInformation) {
-
-		Assert.notEmpty(serverTimeInformation, "Received invalid result from server. Expected 2 items in collection.");
-		Assert.isTrue(serverTimeInformation.size() == 2,
-				"Received invalid number of arguments from redis server. Expected 2 received " + serverTimeInformation.size());
-
-		return Converters.toTimeMillis(LettuceConverters.toString(serverTimeInformation.get(0)),
-				LettuceConverters.toString(serverTimeInformation.get(1)));
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#getClientList()
-	 */
-	@Override
-	public List<RedisClientInfo> getClientList() {
-
-		List<String> map = clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clientList();
-			}
-		}).resultsAsList();
-
-		ArrayList<RedisClientInfo> result = new ArrayList<>();
-		for (String infos : map) {
-			result.addAll(LettuceConverters.toListOfRedisClientInformation(infos));
-		}
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisClusterConnection#getClientList(org.springframework.data.redis.connection.RedisClusterNode)
-	 */
-	@Override
-	public List<RedisClientInfo> getClientList(RedisClusterNode node) {
-
-		return LettuceConverters.toListOfRedisClientInformation(
-				clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.clientList();
-					}
-				}, node).getValue());
 	}
 
 	/*
