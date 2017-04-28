@@ -17,6 +17,7 @@ package org.springframework.data.redis.connection.lettuce;
 
 import io.lettuce.core.RedisException;
 import io.lettuce.core.api.StatefulConnection;
+import io.lettuce.core.api.sync.BaseRedisCommands;
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.SlotHash;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
@@ -98,7 +99,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		clusterCommandExecutor = executor;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#geoCommands()
 	 */
@@ -107,7 +108,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterGeoCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#hashCommands()
 	 */
@@ -116,7 +117,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterHashCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#hyperLogLogCommands()
 	 */
@@ -125,7 +126,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterHyperLogLogCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#keyCommands()
 	 */
@@ -138,7 +139,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterKeyCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#listCommands()
 	 */
@@ -147,7 +148,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterListCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#stringCommands()
 	 */
@@ -156,7 +157,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterStringCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#setCommands()
 	 */
@@ -165,7 +166,7 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterSetCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#zSetCommands()
 	 */
@@ -174,6 +175,10 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		return new LettuceClusterZSetCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#serverCommands()
+	 */
 	@Override
 	public RedisClusterServerCommands serverCommands() {
 		return new LettuceClusterServerCommands(this);
@@ -191,13 +196,9 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		final RedisClusterNode nodeToUse = topologyProvider.getTopology().lookup(master);
 
 		return clusterCommandExecutor
-				.executeCommandOnSingleNode(new LettuceClusterCommandCallback<Set<RedisClusterNode>>() {
-
-					@Override
-					public Set<RedisClusterNode> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return LettuceConverters.toSetOfRedisClusterNodes(client.clusterSlaves(nodeToUse.getId()));
-					}
-				}, master).getValue();
+				.executeCommandOnSingleNode((LettuceClusterCommandCallback<Set<RedisClusterNode>>) client -> LettuceConverters
+						.toSetOfRedisClusterNodes(client.clusterSlaves(nodeToUse.getId())), master)
+				.getValue();
 	}
 
 	/*
@@ -237,13 +238,10 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	@Override
 	public ClusterInfo clusterGetClusterInfo() {
 
-		return clusterCommandExecutor.executeCommandOnArbitraryNode(new LettuceClusterCommandCallback<ClusterInfo>() {
-
-			@Override
-			public ClusterInfo doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return new ClusterInfo(LettuceConverters.toProperties(client.clusterInfo()));
-			}
-		}).getValue();
+		return clusterCommandExecutor
+				.executeCommandOnArbitraryNode((LettuceClusterCommandCallback<ClusterInfo>) client -> new ClusterInfo(
+						LettuceConverters.toProperties(client.clusterInfo())))
+				.getValue();
 	}
 
 	/*
@@ -253,13 +251,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	@Override
 	public void clusterAddSlots(RedisClusterNode node, final int... slots) {
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clusterAddSlots(slots);
-			}
-		}, node);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(LettuceClusterCommandCallback<String>) client -> client.clusterAddSlots(slots), node);
 
 	}
 
@@ -281,14 +274,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	 */
 	@Override
 	public void clusterDeleteSlots(RedisClusterNode node, final int... slots) {
-
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clusterDelSlots(slots);
-			}
-		}, node);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(LettuceClusterCommandCallback<String>) client -> client.clusterDelSlots(slots), node);
 	}
 
 	/*
@@ -314,14 +301,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		final RedisClusterNode nodeToRemove = topologyProvider.getTopology().lookup(node);
 		nodes.remove(nodeToRemove);
 
-		this.clusterCommandExecutor.executeCommandAsyncOnNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clusterForget(nodeToRemove.getId());
-			}
-
-		}, nodes);
+		this.clusterCommandExecutor.executeCommandAsyncOnNodes(
+				(LettuceClusterCommandCallback<String>) client -> client.clusterForget(nodeToRemove.getId()), nodes);
 	}
 
 	/*
@@ -335,13 +316,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		Assert.hasText(node.getHost(), "Node to meet cluster must have a host!");
 		Assert.isTrue(node.getPort() > 0, "Node to meet cluster must have a port greater 0!");
 
-		this.clusterCommandExecutor.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clusterMeet(node.getHost(), node.getPort());
-			}
-		});
+		this.clusterCommandExecutor.executeCommandOnAllNodes(
+				(LettuceClusterCommandCallback<String>) client -> client.clusterMeet(node.getHost(), node.getPort()));
 	}
 
 	/*
@@ -357,22 +333,18 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 		final RedisClusterNode nodeToUse = topologyProvider.getTopology().lookup(node);
 		final String nodeId = nodeToUse.getId();
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				switch (mode) {
-					case MIGRATING:
-						return client.clusterSetSlotMigrating(slot, nodeId);
-					case IMPORTING:
-						return client.clusterSetSlotImporting(slot, nodeId);
-					case NODE:
-						return client.clusterSetSlotNode(slot, nodeId);
-					case STABLE:
-						return client.clusterSetSlotStable(slot);
-					default:
-						throw new InvalidDataAccessApiUsageException("Invalid import mode for cluster slot: " + slot);
-				}
+		clusterCommandExecutor.executeCommandOnSingleNode((LettuceClusterCommandCallback<String>) client -> {
+			switch (mode) {
+				case MIGRATING:
+					return client.clusterSetSlotMigrating(slot, nodeId);
+				case IMPORTING:
+					return client.clusterSetSlotImporting(slot, nodeId);
+				case NODE:
+					return client.clusterSetSlotNode(slot, nodeId);
+				case STABLE:
+					return client.clusterSetSlotStable(slot);
+				default:
+					throw new InvalidDataAccessApiUsageException("Invalid import mode for cluster slot: " + slot);
 			}
 		}, node);
 	}
@@ -413,13 +385,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	public void clusterReplicate(final RedisClusterNode master, RedisClusterNode slave) {
 
 		final RedisClusterNode masterNode = topologyProvider.getTopology().lookup(master);
-		clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.clusterReplicate(masterNode.getId());
-			}
-		}, slave);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(LettuceClusterCommandCallback<String>) client -> client.clusterReplicate(masterNode.getId()), slave);
 	}
 
 	/*
@@ -429,13 +396,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	@Override
 	public String ping() {
 		Collection<String> ping = clusterCommandExecutor
-				.executeCommandOnAllNodes(new LettuceClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(RedisClusterCommands<byte[], byte[]> connection) {
-						return connection.ping();
-					}
-				}).resultsAsList();
+				.executeCommandOnAllNodes((LettuceClusterCommandCallback<String>) BaseRedisCommands::ping)
+				.resultsAsList();
 
 		for (String result : ping) {
 			if (!ObjectUtils.nullSafeEquals("PONG", result)) {
@@ -453,13 +415,8 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	@Override
 	public String ping(RedisClusterNode node) {
 
-		return clusterCommandExecutor.executeCommandOnSingleNode(new LettuceClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-				return client.ping();
-			}
-		}, node).getValue();
+		return clusterCommandExecutor
+				.executeCommandOnSingleNode((LettuceClusterCommandCallback<String>) BaseRedisCommands::ping, node).getValue();
 	}
 
 	/*
@@ -542,13 +499,11 @@ public class LettuceClusterConnection extends LettuceConnection implements Defau
 	public Map<RedisClusterNode, Collection<RedisClusterNode>> clusterGetMasterSlaveMap() {
 
 		List<NodeResult<Collection<RedisClusterNode>>> nodeResults = clusterCommandExecutor
-				.executeCommandAsyncOnNodes(new LettuceClusterCommandCallback<Collection<RedisClusterNode>>() {
-
-					@Override
-					public Set<RedisClusterNode> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return Converters.toSetOfRedisClusterNodes(client.clusterSlaves(client.clusterMyId()));
-					}
-				}, topologyProvider.getTopology().getActiveMasterNodes()).getResults();
+				.executeCommandAsyncOnNodes(
+						(LettuceClusterCommandCallback<Collection<RedisClusterNode>>) client -> Converters
+								.toSetOfRedisClusterNodes(client.clusterSlaves(client.clusterMyId())),
+						topologyProvider.getTopology().getActiveMasterNodes())
+				.getResults();
 
 		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<>();
 

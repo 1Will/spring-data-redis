@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.lettuce;
 
-import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -177,13 +175,8 @@ class LettuceClusterKeyCommands extends LettuceKeyCommands {
 	public byte[] randomKey(RedisClusterNode node) {
 
 		return connection.getClusterCommandExecutor()
-				.executeCommandOnSingleNode(new LettuceClusterCommandCallback<byte[]>() {
-
-					@Override
-					public byte[] doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.randomkey();
-					}
-				}, node).getValue();
+				.executeCommandOnSingleNode((LettuceClusterCommandCallback<byte[]>) client -> client.randomkey(), node)
+				.getValue();
 	}
 
 	/*
@@ -193,13 +186,8 @@ class LettuceClusterKeyCommands extends LettuceKeyCommands {
 	public Set<byte[]> keys(RedisClusterNode node, final byte[] pattern) {
 
 		return LettuceConverters.toBytesSet(connection.getClusterCommandExecutor()
-				.executeCommandOnSingleNode(new LettuceClusterCommandCallback<List<byte[]>>() {
-
-					@Override
-					public List<byte[]> doInCluster(RedisClusterCommands<byte[], byte[]> client) {
-						return client.keys(pattern);
-					}
-				}, node).getValue());
+				.executeCommandOnSingleNode((LettuceClusterCommandCallback<List<byte[]>>) client -> client.keys(pattern), node)
+				.getValue());
 	}
 
 	/*

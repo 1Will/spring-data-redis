@@ -15,6 +15,7 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
@@ -120,7 +121,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		throw new UnsupportedOperationException("Execute is currently not supported in cluster mode.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#geoCommands()
 	 */
@@ -129,7 +130,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterGeoCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#hashCommands()
 	 */
@@ -138,7 +139,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterHashCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#hyperLogLogCommands()
 	 */
@@ -147,7 +148,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterHyperLogLogCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#keyCommands()
 	 */
@@ -156,7 +157,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return doGetKeyCommands();
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#stringCommands()
 	 */
@@ -165,7 +166,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterStringCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#listCommands()
 	 */
@@ -174,7 +175,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterListCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#setCommands()
 	 */
@@ -183,7 +184,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterSetCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#zSetCommands()
 	 */
@@ -192,7 +193,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterZSetCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterConnection#serverCommands()
 	 */
@@ -201,7 +202,7 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		return new JedisClusterServerCommands(this);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#scriptingCommands()
 	 */
@@ -365,13 +366,9 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public String ping() {
 
-		return !clusterCommandExecutor.executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.ping();
-			}
-		}).resultsAsList().isEmpty() ? "PONG" : null;
+		return !clusterCommandExecutor
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::ping).resultsAsList()
+				.isEmpty() ? "PONG" : null;
 
 	}
 
@@ -382,13 +379,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public String ping(RedisClusterNode node) {
 
-		return clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.ping();
-			}
-		}, node).getValue();
+		return clusterCommandExecutor
+				.executeCommandOnSingleNode((JedisClusterCommandCallback<String>) BinaryJedis::ping, node).getValue();
 	}
 
 	/*
@@ -408,24 +400,20 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		final RedisClusterNode nodeToUse = topologyProvider.getTopology().lookup(node);
 		final String nodeId = nodeToUse.getId();
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
+		clusterCommandExecutor.executeCommandOnSingleNode((JedisClusterCommandCallback<String>) client -> {
 
-			@Override
-			public String doInCluster(Jedis client) {
-
-				switch (mode) {
-					case IMPORTING:
-						return client.clusterSetSlotImporting(slot, nodeId);
-					case MIGRATING:
-						return client.clusterSetSlotMigrating(slot, nodeId);
-					case STABLE:
-						return client.clusterSetSlotStable(slot);
-					case NODE:
-						return client.clusterSetSlotNode(slot, nodeId);
-				}
-
-				throw new IllegalArgumentException(String.format("Unknown AddSlots mode '%s'.", mode));
+			switch (mode) {
+				case IMPORTING:
+					return client.clusterSetSlotImporting(slot, nodeId);
+				case MIGRATING:
+					return client.clusterSetSlotMigrating(slot, nodeId);
+				case STABLE:
+					return client.clusterSetSlotStable(slot);
+				case NODE:
+					return client.clusterSetSlotNode(slot, nodeId);
 			}
+
+			throw new IllegalArgumentException(String.format("Unknown AddSlots mode '%s'.", mode));
 		}, node);
 
 	}
@@ -439,14 +427,11 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 
 		RedisClusterNode node = clusterGetNodeForSlot(slot);
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<List<byte[]>>() {
-
-			@Override
-			public List<byte[]> doInCluster(Jedis client) {
-				return JedisConverters.stringListToByteList()
-						.convert(client.clusterGetKeysInSlot(slot, count != null ? count.intValue() : Integer.MAX_VALUE));
-			}
-		}, node);
+		clusterCommandExecutor
+				.executeCommandOnSingleNode(
+						(JedisClusterCommandCallback<List<byte[]>>) client -> JedisConverters.stringListToByteList()
+								.convert(client.clusterGetKeysInSlot(slot, count != null ? count.intValue() : Integer.MAX_VALUE)),
+						node);
 		return null;
 	}
 
@@ -457,14 +442,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public void clusterAddSlots(RedisClusterNode node, final int... slots) {
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-
-				return client.clusterAddSlots(slots);
-			}
-		}, node);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<String>) client -> client.clusterAddSlots(slots), node);
 
 	}
 
@@ -489,14 +468,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 
 		RedisClusterNode node = clusterGetNodeForSlot(slot);
 
-		return clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<Long>() {
-
-			@Override
-			public Long doInCluster(Jedis client) {
-
-				return client.clusterCountKeysInSlot(slot);
-			}
-		}, node).getValue();
+		return clusterCommandExecutor.executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<Long>) client -> client.clusterCountKeysInSlot(slot), node).getValue();
 
 	}
 
@@ -507,13 +480,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public void clusterDeleteSlots(RedisClusterNode node, final int... slots) {
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.clusterDelSlots(slots);
-			}
-		}, node);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<String>) client -> client.clusterDelSlots(slots), node);
 
 	}
 
@@ -540,13 +508,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		final RedisClusterNode nodeToRemove = topologyProvider.getTopology().lookup(node);
 		nodes.remove(nodeToRemove);
 
-		clusterCommandExecutor.executeCommandAsyncOnNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.clusterForget(node.getId());
-			}
-		}, nodes);
+		clusterCommandExecutor.executeCommandAsyncOnNodes(
+				(JedisClusterCommandCallback<String>) client -> client.clusterForget(node.getId()), nodes);
 	}
 
 	/*
@@ -560,14 +523,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		Assert.hasText(node.getHost(), "Node to meet cluster must have a host!");
 		Assert.isTrue(node.getPort() > 0, "Node to meet cluster must have a port greater 0!");
 
-		clusterCommandExecutor.executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-
-				return client.clusterMeet(node.getHost(), node.getPort());
-			}
-		});
+		clusterCommandExecutor.executeCommandOnAllNodes(
+				(JedisClusterCommandCallback<String>) client -> client.clusterMeet(node.getHost(), node.getPort()));
 	}
 
 	/*
@@ -579,14 +536,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 
 		final RedisClusterNode masterNode = topologyProvider.getTopology().lookup(master);
 
-		clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-
-				return client.clusterReplicate(masterNode.getId());
-			}
-		}, slave);
+		clusterCommandExecutor.executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<String>) client -> client.clusterReplicate(masterNode.getId()), slave);
 
 	}
 
@@ -597,13 +548,8 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	@Override
 	public Integer clusterGetSlotForKey(final byte[] key) {
 
-		return clusterCommandExecutor.executeCommandOnArbitraryNode(new JedisClusterCommandCallback<Integer>() {
-
-			@Override
-			public Integer doInCluster(Jedis client) {
-				return client.clusterKeySlot(JedisConverters.toString(key)).intValue();
-			}
-		}).getValue();
+		return clusterCommandExecutor.executeCommandOnArbitraryNode((JedisClusterCommandCallback<Integer>) client -> client
+				.clusterKeySlot(JedisConverters.toString(key)).intValue()).getValue();
 	}
 
 	/*
@@ -643,13 +589,10 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		final RedisClusterNode nodeToUse = topologyProvider.getTopology().lookup(master);
 
 		return JedisConverters.toSetOfRedisClusterNodes(
-				clusterCommandExecutor.executeCommandOnSingleNode(new JedisClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(Jedis client) {
-						return client.clusterSlaves(nodeToUse.getId());
-					}
-				}, master).getValue());
+				clusterCommandExecutor
+						.executeCommandOnSingleNode(
+								(JedisClusterCommandCallback<List<String>>) client -> client.clusterSlaves(nodeToUse.getId()), master)
+						.getValue());
 	}
 
 	/*
@@ -660,15 +603,11 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	public Map<RedisClusterNode, Collection<RedisClusterNode>> clusterGetMasterSlaveMap() {
 
 		List<NodeResult<Collection<RedisClusterNode>>> nodeResults = clusterCommandExecutor
-				.executeCommandAsyncOnNodes(new JedisClusterCommandCallback<Collection<RedisClusterNode>>() {
+				.executeCommandAsyncOnNodes((JedisClusterCommandCallback<Collection<RedisClusterNode>>) client -> {
 
-					@Override
-					public Set<RedisClusterNode> doInCluster(Jedis client) {
-
-						// TODO: remove client.eval as soon as Jedis offers support for myid
-						return JedisConverters.toSetOfRedisClusterNodes(
-								client.clusterSlaves((String) client.eval("return redis.call('cluster', 'myid')", 0)));
-					}
+					// TODO: remove client.eval as soon as Jedis offers support for myid
+					return JedisConverters.toSetOfRedisClusterNodes(
+							client.clusterSlaves((String) client.eval("return redis.call('cluster', 'myid')", 0)));
 				}, topologyProvider.getTopology().getActiveMasterNodes()).getResults();
 
 		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<>();
@@ -697,13 +636,9 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 	public ClusterInfo clusterGetClusterInfo() {
 
 		return new ClusterInfo(JedisConverters
-				.toProperties(clusterCommandExecutor.executeCommandOnArbitraryNode(new JedisClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(Jedis client) {
-						return client.clusterInfo();
-					}
-				}).getValue()));
+				.toProperties(clusterCommandExecutor
+						.executeCommandOnArbitraryNode((JedisClusterCommandCallback<String>) Jedis::clusterInfo)
+						.getValue()));
 	}
 
 	/*

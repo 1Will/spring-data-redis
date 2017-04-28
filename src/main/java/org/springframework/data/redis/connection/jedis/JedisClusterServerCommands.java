@@ -15,7 +15,7 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.BinaryJedis;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.redis.connection.ClusterCommandExecutor.MulitNodeResult;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
 import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.RedisClusterServerCommands;
@@ -47,85 +48,52 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		this.connection = connection;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#bgReWriteAof(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void bgReWriteAof(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.bgrewriteaof();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::bgrewriteaof, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgReWriteAof()
 	 */
 	@Override
 	public void bgReWriteAof() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.bgrewriteaof();
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::bgrewriteaof);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#bgSave()
 	 */
 	@Override
 	public void bgSave() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.bgsave();
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::bgsave);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#bgSave(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void bgSave(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.bgsave();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::bgsave, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#lastSave()
 	 */
 	@Override
 	public Long lastSave() {
 
-		List<Long> result = new ArrayList<>(
-				connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<Long>() {
-
-					@Override
-					public Long doInCluster(Jedis client) {
-						return client.lastsave();
-					}
-				}).resultsAsList());
+		List<Long> result = new ArrayList<>(executeCommandOnAllNodes(BinaryJedis::lastsave).resultsAsList());
 
 		if (CollectionUtils.isEmpty(result)) {
 			return null;
@@ -135,69 +103,41 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return result.get(0);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#lastSave(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public Long lastSave(RedisClusterNode node) {
-
-		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<Long>() {
-
-			@Override
-			public Long doInCluster(Jedis client) {
-				return client.lastsave();
-			}
-		}, node).getValue();
+		return executeCommandOnSingleNode(BinaryJedis::lastsave, node).getValue();
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#save()
 	 */
 	@Override
 	public void save() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.save();
-			}
-		});
+		executeCommandOnAllNodes(BinaryJedis::save);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#save(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void save(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.save();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::save, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#dbSize()
 	 */
 	@Override
 	public Long dbSize() {
 
-		Collection<Long> dbSizes = connection.getClusterCommandExecutor()
-				.executeCommandOnAllNodes(new JedisClusterCommandCallback<Long>() {
-
-					@Override
-					public Long doInCluster(Jedis client) {
-						return client.dbSize();
-					}
-				}).resultsAsList();
+		Collection<Long> dbSizes = executeCommandOnAllNodes(BinaryJedis::dbSize).resultsAsList();
 
 		if (CollectionUtils.isEmpty(dbSizes)) {
 			return 0L;
@@ -210,87 +150,53 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return size;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#dbSize(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public Long dbSize(RedisClusterNode node) {
-
-		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<Long>() {
-
-			@Override
-			public Long doInCluster(Jedis client) {
-				return client.dbSize();
-			}
-		}, node).getValue();
+		return executeCommandOnSingleNode(BinaryJedis::dbSize, node).getValue();
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushDb()
 	 */
 	@Override
 	public void flushDb() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.flushDB();
-			}
-		});
+		executeCommandOnAllNodes(BinaryJedis::flushDB);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#flushDb(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void flushDb(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.flushDB();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::flushDB, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#flushAll()
 	 */
 	@Override
 	public void flushAll() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.flushAll();
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::flushAll);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#flushAll(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void flushAll(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.flushAll();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::flushAll, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#info()
 	 */
@@ -300,13 +206,9 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		Properties infos = new Properties();
 
 		List<NodeResult<Properties>> nodeResults = connection.getClusterCommandExecutor()
-				.executeCommandOnAllNodes(new JedisClusterCommandCallback<Properties>() {
-
-					@Override
-					public Properties doInCluster(Jedis client) {
-						return JedisConverters.toProperties(client.info());
-					}
-				}).getResults();
+				.executeCommandOnAllNodes(
+						(JedisClusterCommandCallback<Properties>) client -> JedisConverters.toProperties(client.info()))
+				.getResults();
 
 		for (NodeResult<Properties> nodeProperties : nodeResults) {
 			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
@@ -317,24 +219,16 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return infos;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#info(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public Properties info(RedisClusterNode node) {
-
-		return JedisConverters.toProperties(
-				connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(Jedis client) {
-						return client.info();
-					}
-				}, node).getValue());
+		return JedisConverters.toProperties(executeCommandOnSingleNode(BinaryJedis::info, node).getValue());
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#info(java.lang.String)
 	 */
@@ -344,13 +238,9 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		Properties infos = new Properties();
 
 		List<NodeResult<Properties>> nodeResults = connection.getClusterCommandExecutor()
-				.executeCommandOnAllNodes(new JedisClusterCommandCallback<Properties>() {
-
-					@Override
-					public Properties doInCluster(Jedis client) {
-						return JedisConverters.toProperties(client.info(section));
-					}
-				}).getResults();
+				.executeCommandOnAllNodes(
+						(JedisClusterCommandCallback<Properties>) client -> JedisConverters.toProperties(client.info(section)))
+				.getResults();
 
 		for (NodeResult<Properties> nodeProperties : nodeResults) {
 			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
@@ -361,57 +251,36 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return infos;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#info(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String)
 	 */
 	@Override
 	public Properties info(RedisClusterNode node, final String section) {
 
-		return JedisConverters.toProperties(
-				connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(Jedis client) {
-						return client.info(section);
-					}
-				}, node).getValue());
+		return JedisConverters.toProperties(executeCommandOnSingleNode(client -> client.info(section), node).getValue());
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#shutdown()
 	 */
 	@Override
 	public void shutdown() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.shutdown();
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::shutdown);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#shutdown(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void shutdown(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.shutdown();
-			}
-		}, node);
-
+		executeCommandOnSingleNode(BinaryJedis::shutdown, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#shutdown(org.springframework.data.redis.connection.RedisServerCommands.ShutdownOption)
 	 */
@@ -426,7 +295,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		throw new IllegalArgumentException("Shutdown with options is not supported for jedis.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#getConfig(java.lang.String)
 	 */
@@ -434,13 +303,8 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 	public List<String> getConfig(final String pattern) {
 
 		List<NodeResult<List<String>>> mapResult = connection.getClusterCommandExecutor()
-				.executeCommandOnAllNodes(new JedisClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(Jedis client) {
-						return client.configGet(pattern);
-					}
-				}).getResults();
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<List<String>>) client -> client.configGet(pattern))
+				.getResults();
 
 		List<String> result = new ArrayList<>();
 		for (NodeResult<List<String>> entry : mapResult) {
@@ -455,88 +319,58 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return result;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#getConfig(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String)
 	 */
 	@Override
 	public List<String> getConfig(RedisClusterNode node, final String pattern) {
 
-		return connection.getClusterCommandExecutor()
-				.executeCommandOnSingleNode(new JedisClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(Jedis client) {
-						return client.configGet(pattern);
-					}
-				}, node).getValue();
+		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<List<String>>) client -> client.configGet(pattern), node).getValue();
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#setConfig(java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void setConfig(final String param, final String value) {
 
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.configSet(param, value);
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) client -> client.configSet(param, value));
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#setConfig(org.springframework.data.redis.connection.RedisClusterNode, java.lang.String, java.lang.String)
 	 */
 	@Override
 	public void setConfig(RedisClusterNode node, final String param, final String value) {
 
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.configSet(param, value);
-			}
-		}, node);
+		executeCommandOnSingleNode(client -> client.configSet(param, value), node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#resetConfigStats()
 	 */
 	@Override
 	public void resetConfigStats() {
-
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.configResetStat();
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::configResetStat);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#resetConfigStats(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public void resetConfigStats(RedisClusterNode node) {
-
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.configResetStat();
-			}
-		}, node);
+		executeCommandOnSingleNode(BinaryJedis::configResetStat, node);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#time()
 	 */
@@ -544,16 +378,10 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 	public Long time() {
 
 		return convertListOfStringToTime(connection.getClusterCommandExecutor()
-				.executeCommandOnArbitraryNode(new JedisClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(Jedis client) {
-						return client.time();
-					}
-				}).getValue());
+				.executeCommandOnArbitraryNode((JedisClusterCommandCallback<List<String>>) BinaryJedis::time).getValue());
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#time(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
@@ -561,16 +389,10 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 	public Long time(RedisClusterNode node) {
 
 		return convertListOfStringToTime(connection.getClusterCommandExecutor()
-				.executeCommandOnSingleNode(new JedisClusterCommandCallback<List<String>>() {
-
-					@Override
-					public List<String> doInCluster(Jedis client) {
-						return client.time();
-					}
-				}, node).getValue());
+				.executeCommandOnSingleNode((JedisClusterCommandCallback<List<String>>) BinaryJedis::time, node).getValue());
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#killClient(java.lang.String, int)
 	 */
@@ -579,16 +401,11 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 
 		final String hostAndPort = String.format("%s:%s", host, port);
 
-		connection.getClusterCommandExecutor().executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.clientKill(hostAndPort);
-			}
-		});
+		connection.getClusterCommandExecutor()
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) client -> client.clientKill(hostAndPort));
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#setClientName(byte[])
 	 */
@@ -597,7 +414,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		throw new InvalidDataAccessApiUsageException("CLIENT SETNAME is not supported in cluster environment.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#getClientName()
 	 */
@@ -606,7 +423,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		throw new InvalidDataAccessApiUsageException("CLIENT GETNAME is not supported in cluster environment.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#getClientList()
 	 */
@@ -614,13 +431,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 	public List<RedisClientInfo> getClientList() {
 
 		Collection<String> map = connection.getClusterCommandExecutor()
-				.executeCommandOnAllNodes(new JedisClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(Jedis client) {
-						return client.clientList();
-					}
-				}).resultsAsList();
+				.executeCommandOnAllNodes((JedisClusterCommandCallback<String>) BinaryJedis::clientList).resultsAsList();
 
 		ArrayList<RedisClientInfo> result = new ArrayList<>();
 		for (String infos : map) {
@@ -629,24 +440,18 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		return result;
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisClusterServerCommands#getClientList(org.springframework.data.redis.connection.RedisClusterNode)
 	 */
 	@Override
 	public List<RedisClientInfo> getClientList(RedisClusterNode node) {
 
-		return JedisConverters.toListOfRedisClientInformation(
-				connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-					@Override
-					public String doInCluster(Jedis client) {
-						return client.clientList();
-					}
-				}, node).getValue());
+		return JedisConverters
+				.toListOfRedisClientInformation(executeCommandOnSingleNode(BinaryJedis::clientList, node).getValue());
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#slaveOf(java.lang.String, int)
 	 */
@@ -656,7 +461,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 				"SlaveOf is not supported in cluster environment. Please use CLUSTER REPLICATE.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#slaveOfNoOne()
 	 */
@@ -666,7 +471,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 				"SlaveOf is not supported in cluster environment. Please use CLUSTER REPLICATE.");
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#migrate(byte[], org.springframework.data.redis.connection.RedisNode, int, org.springframework.data.redis.connection.RedisServerCommands.MigrateOption)
 	 */
@@ -675,7 +480,7 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 		migrate(key, target, dbIndex, option, Long.MAX_VALUE);
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisServerCommands#migrate(byte[], org.springframework.data.redis.connection.RedisNode, int, org.springframework.data.redis.connection.RedisServerCommands.MigrateOption, long)
 	 */
@@ -687,13 +492,8 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 
 		RedisClusterNode node = connection.getTopologyProvider().getTopology().lookup(target.getHost(), target.getPort());
 
-		connection.getClusterCommandExecutor().executeCommandOnSingleNode(new JedisClusterCommandCallback<String>() {
-
-			@Override
-			public String doInCluster(Jedis client) {
-				return client.migrate(JedisConverters.toBytes(target.getHost()), target.getPort(), key, dbIndex, timeoutToUse);
-			}
-		}, node);
+		executeCommandOnSingleNode(client -> client.migrate(JedisConverters.toBytes(target.getHost()), target.getPort(),
+				key, dbIndex, timeoutToUse), node);
 	}
 
 	private Long convertListOfStringToTime(List<String> serverTimeInformation) {
@@ -703,5 +503,13 @@ class JedisClusterServerCommands implements RedisClusterServerCommands {
 				"Received invalid number of arguments from redis server. Expected 2 received " + serverTimeInformation.size());
 
 		return Converters.toTimeMillis(serverTimeInformation.get(0), serverTimeInformation.get(1));
+	}
+
+	private <T> NodeResult<T> executeCommandOnSingleNode(JedisClusterCommandCallback<T> cmd, RedisClusterNode node) {
+		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(cmd, node);
+	}
+
+	private <T> MulitNodeResult<T> executeCommandOnAllNodes(JedisClusterCommandCallback<T> cmd) {
+		return connection.getClusterCommandExecutor().executeCommandOnAllNodes(cmd);
 	}
 }
