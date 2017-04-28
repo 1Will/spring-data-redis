@@ -52,8 +52,7 @@ import org.springframework.util.ObjectUtils;
  * @author Mark Paluch
  * @since 1.7
  */
-public class LettuceClusterConnection extends LettuceConnection
-		implements DefaultedRedisClusterConnection {
+public class LettuceClusterConnection extends LettuceConnection implements DefaultedRedisClusterConnection {
 
 	static final ExceptionTranslationStrategy exceptionConverter = new PassThroughExceptionTranslationStrategy(
 			new LettuceExceptionConverter());
@@ -99,21 +98,37 @@ public class LettuceClusterConnection extends LettuceConnection
 		clusterCommandExecutor = executor;
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#geoCommands()
+	 */
 	@Override
 	public RedisGeoCommands geoCommands() {
 		return new LettuceClusterGeoCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#hashCommands()
+	 */
 	@Override
 	public RedisHashCommands hashCommands() {
 		return new LettuceClusterHashCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#hyperLogLogCommands()
+	 */
 	@Override
 	public RedisHyperLogLogCommands hyperLogLogCommands() {
 		return new LettuceClusterHyperLogLogCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#keyCommands()
+	 */
 	@Override
 	public RedisKeyCommands keyCommands() {
 		return doGetClusterKeyCommands();
@@ -123,21 +138,37 @@ public class LettuceClusterConnection extends LettuceConnection
 		return new LettuceClusterKeyCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#listCommands()
+	 */
 	@Override
 	public RedisListCommands listCommands() {
 		return new LettuceClusterListCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#stringCommands()
+	 */
 	@Override
 	public RedisStringCommands stringCommands() {
 		return new LettuceClusterStringCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#setCommands()
+	 */
 	@Override
 	public RedisSetCommands setCommands() {
 		return new LettuceClusterSetCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.lettuce.LettuceConnection#zSetCommands()
+	 */
 	@Override
 	public RedisZSetCommands zSetCommands() {
 		return new LettuceClusterZSetCommands(this);

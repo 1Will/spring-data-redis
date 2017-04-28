@@ -43,7 +43,6 @@ import io.lettuce.core.sentinel.api.StatefulRedisSentinelConnection;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -209,27 +208,6 @@ public class LettuceConnection extends AbstractRedisConnection {
 		}
 	}
 
-	private class LettuceEvalResultsConverter<T> implements Converter<Object, T> {
-		private ReturnType returnType;
-
-		public LettuceEvalResultsConverter(ReturnType returnType) {
-			this.returnType = returnType;
-		}
-
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		public T convert(Object source) {
-			if (returnType == ReturnType.MULTI) {
-				List resultList = (List) source;
-				for (Object obj : resultList) {
-					if (obj instanceof Exception) {
-						throw convertLettuceAccessException((Exception) obj);
-					}
-				}
-			}
-			return (T) source;
-		}
-	}
-
 	/**
 	 * Instantiates a new lettuce connection.
 	 *
@@ -308,46 +286,91 @@ public class LettuceConnection extends AbstractRedisConnection {
 		return exception;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#geoCommands()
+	 */
 	@Override
 	public RedisGeoCommands geoCommands() {
 		return new LettuceGeoCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hashCommands()
+	 */
 	@Override
 	public RedisHashCommands hashCommands() {
 		return new LettuceHashCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hyperLogLogCommands()
+	 */
 	@Override
 	public RedisHyperLogLogCommands hyperLogLogCommands() {
 		return new LettuceHyperLogLogCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#keyCommands()
+	 */
 	@Override
 	public RedisKeyCommands keyCommands() {
 		return new LettuceKeyCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#listCommands()
+	 */
 	@Override
 	public RedisListCommands listCommands() {
 		return new LettuceListCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#setCommands()
+	 */
 	@Override
 	public RedisSetCommands setCommands() {
 		return new LettuceSetCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#scriptingCommands()
+	 */
+	@Override
+	public RedisScriptingCommands scriptingCommands() {
+		return new LettuceScriptingCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#stringCommands()
+	 */
 	@Override
 	public RedisStringCommands stringCommands() {
 		return new LettuceStringCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#serverCommands()
+	 */
 	@Override
 	public RedisServerCommands serverCommands() {
 		return new LettuceServerCommands(this);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#zSetCommands()
+	 */
 	@Override
 	public RedisZSetCommands zSetCommands() {
 		return new LettuceZSetCommands(this);
@@ -688,129 +711,6 @@ public class LettuceConnection extends AbstractRedisConnection {
 	}
 
 	//
-	// Scripting commands
-	//
-
-	public void scriptFlush() {
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceStatusResult(getAsyncConnection().scriptFlush()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxStatusResult(getConnection().scriptFlush()));
-				return;
-			}
-			getConnection().scriptFlush();
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public void scriptKill() {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException("Script kill not permitted in a transaction");
-		}
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceStatusResult(getAsyncConnection().scriptKill()));
-				return;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxStatusResult(getConnection().scriptKill()));
-				return;
-			}
-			getConnection().scriptKill();
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public String scriptLoad(byte[] script) {
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceResult(getAsyncConnection().scriptLoad(script)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(getConnection().scriptLoad(script)));
-				return null;
-			}
-			return getConnection().scriptLoad(script);
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public List<Boolean> scriptExists(String... scriptSha1) {
-		try {
-			if (isPipelined()) {
-				pipeline(new LettuceResult(getAsyncConnection().scriptExists(scriptSha1)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(getConnection().scriptExists(scriptSha1)));
-				return null;
-			}
-			return getConnection().scriptExists(scriptSha1);
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public <T> T eval(byte[] script, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		try {
-			byte[][] keys = extractScriptKeys(numKeys, keysAndArgs);
-			byte[][] args = extractScriptArgs(numKeys, keysAndArgs);
-			String convertedScript = LettuceConverters.toString(script);
-			if (isPipelined()) {
-				pipeline(new LettuceResult(
-						getAsyncConnection().eval(convertedScript, LettuceConverters.toScriptOutputType(returnType), keys, args),
-						new LettuceEvalResultsConverter<T>(returnType)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(
-						getConnection().eval(convertedScript, LettuceConverters.toScriptOutputType(returnType), keys, args),
-						new LettuceEvalResultsConverter<T>(returnType)));
-				return null;
-			}
-			return new LettuceEvalResultsConverter<T>(returnType)
-					.convert(getConnection().eval(convertedScript, LettuceConverters.toScriptOutputType(returnType), keys, args));
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public <T> T evalSha(String scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		try {
-			byte[][] keys = extractScriptKeys(numKeys, keysAndArgs);
-			byte[][] args = extractScriptArgs(numKeys, keysAndArgs);
-
-			if (isPipelined()) {
-				pipeline(new LettuceResult(
-						getAsyncConnection().evalsha(scriptSha1, LettuceConverters.toScriptOutputType(returnType), keys, args),
-						new LettuceEvalResultsConverter<T>(returnType)));
-				return null;
-			}
-			if (isQueueing()) {
-				transaction(new LettuceTxResult(
-						getConnection().evalsha(scriptSha1, LettuceConverters.toScriptOutputType(returnType), keys, args),
-						new LettuceEvalResultsConverter<T>(returnType)));
-				return null;
-			}
-			return new LettuceEvalResultsConverter<T>(returnType)
-					.convert(getConnection().evalsha(scriptSha1, LettuceConverters.toScriptOutputType(returnType), keys, args));
-		} catch (Exception ex) {
-			throw convertLettuceAccessException(ex);
-		}
-	}
-
-	public <T> T evalSha(byte[] scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		return evalSha(LettuceConverters.toString(scriptSha1), returnType, numKeys, keysAndArgs);
-	}
-
-	//
 	// Pub/Sub functionality
 	//
 
@@ -1004,20 +904,6 @@ public class LettuceConnection extends AbstractRedisConnection {
 
 		throw new IllegalStateException(
 				String.format("%s is not a supported connection type.", asyncDedicatedConn.getClass().getName()));
-	}
-
-	private byte[][] extractScriptKeys(int numKeys, byte[]... keysAndArgs) {
-		if (numKeys > 0) {
-			return Arrays.copyOfRange(keysAndArgs, 0, numKeys);
-		}
-		return new byte[0][0];
-	}
-
-	private byte[][] extractScriptArgs(int numKeys, byte[]... keysAndArgs) {
-		if (keysAndArgs.length > numKeys) {
-			return Arrays.copyOfRange(keysAndArgs, numKeys, keysAndArgs.length);
-		}
-		return new byte[0][0];
 	}
 
 	io.lettuce.core.ScanCursor getScanCursor(long cursorId) {

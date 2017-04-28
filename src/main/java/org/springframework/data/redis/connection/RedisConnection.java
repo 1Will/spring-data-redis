@@ -91,6 +91,16 @@ public interface RedisConnection extends RedisCommands {
 	}
 
 	/**
+	 * Get {@link RedisScriptingCommands}.
+	 *
+	 * @return never {@literal null}.
+	 * @since 2.0
+	 */
+	default RedisScriptingCommands scriptingCommands() {
+		return this;
+	}
+
+	/**
 	 * Get {@link RedisServerCommands}.
 	 *
 	 * @return never {@literal null}.

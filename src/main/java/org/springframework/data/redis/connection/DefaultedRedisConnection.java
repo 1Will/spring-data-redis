@@ -1018,7 +1018,7 @@ public interface DefaultedRedisConnection extends RedisConnection {
 		hyperLogLogCommands().pfMerge(destinationKey, sourceKeys);
 	}
 
-	// Server COMMANDS
+	// SERVER COMMANDS
 
 	/** @deprecated in favor of {@link RedisConnection#serverCommands()}. */
 	@Override
@@ -1186,5 +1186,56 @@ public interface DefaultedRedisConnection extends RedisConnection {
 	@Deprecated
 	default void migrate(byte[] key, RedisNode target, int dbIndex, MigrateOption option, long timeout) {
 		serverCommands().migrate(key, target, dbIndex, option, timeout);
+	}
+
+	// SCRIPTING COMMANDS
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default void scriptFlush() {
+		scriptingCommands().scriptFlush();
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default void scriptKill() {
+		scriptingCommands().scriptKill();
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default String scriptLoad(byte[] script) {
+		return scriptingCommands().scriptLoad(script);
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default List<Boolean> scriptExists(String... scriptShas) {
+		return scriptingCommands().scriptExists(scriptShas);
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default <T> T eval(byte[] script, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
+		return scriptingCommands().eval(script, returnType, numKeys, keysAndArgs);
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default <T> T evalSha(String scriptSha, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
+		return scriptingCommands().evalSha(scriptSha, returnType, numKeys, keysAndArgs);
+	}
+
+	/** @deprecated in favor of {@link RedisConnection#scriptingCommands()}. */
+	@Override
+	@Deprecated
+	default <T> T evalSha(byte[] scriptSha, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
+		return scriptingCommands().evalSha(scriptSha, returnType, numKeys, keysAndArgs);
 	}
 }

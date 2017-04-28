@@ -120,49 +120,94 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 		throw new UnsupportedOperationException("Execute is currently not supported in cluster mode.");
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#geoCommands()
+	 */
 	@Override
 	public RedisGeoCommands geoCommands() {
 		return new JedisClusterGeoCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hashCommands()
+	 */
 	@Override
 	public RedisHashCommands hashCommands() {
 		return new JedisClusterHashCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#hyperLogLogCommands()
+	 */
 	@Override
 	public RedisHyperLogLogCommands hyperLogLogCommands() {
 		return new JedisClusterHyperLogLogCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#keyCommands()
+	 */
 	@Override
 	public RedisKeyCommands keyCommands() {
 		return doGetKeyCommands();
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#stringCommands()
+	 */
 	@Override
 	public RedisStringCommands stringCommands() {
 		return new JedisClusterStringCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#listCommands()
+	 */
 	@Override
 	public RedisListCommands listCommands() {
 		return new JedisClusterListCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#setCommands()
+	 */
 	@Override
 	public RedisSetCommands setCommands() {
 		return new JedisClusterSetCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#zSetCommands()
+	 */
 	@Override
 	public RedisZSetCommands zSetCommands() {
 		return new JedisClusterZSetCommands(this);
 	}
 
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisClusterConnection#serverCommands()
+	 */
 	@Override
 	public RedisClusterServerCommands serverCommands() {
 		return new JedisClusterServerCommands(this);
+	}
+
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#scriptingCommands()
+	 */
+	@Override
+	public RedisScriptingCommands scriptingCommands() {
+		return JedisClusterScriptingCommands.INSTANCE;
 	}
 
 	private JedisClusterKeyCommands doGetKeyCommands() {
@@ -344,69 +389,6 @@ public class JedisClusterConnection implements DefaultedRedisClusterConnection {
 				return client.ping();
 			}
 		}, node).getValue();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptFlush()
-	 */
-	@Override
-	public void scriptFlush() {
-		throw new InvalidDataAccessApiUsageException("ScriptFlush is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptKill()
-	 */
-	@Override
-	public void scriptKill() {
-		throw new InvalidDataAccessApiUsageException("ScriptKill is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptLoad(byte[])
-	 */
-	@Override
-	public String scriptLoad(byte[] script) {
-		throw new InvalidDataAccessApiUsageException("ScriptLoad is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptExists(java.lang.String[])
-	 */
-	@Override
-	public List<Boolean> scriptExists(String... scriptShas) {
-		throw new InvalidDataAccessApiUsageException("ScriptExists is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#eval(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	public <T> T eval(byte[] script, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		throw new InvalidDataAccessApiUsageException("Eval is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(java.lang.String, org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	public <T> T evalSha(String scriptSha, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		throw new InvalidDataAccessApiUsageException("EvalSha is not supported in cluster environment.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	public <T> T evalSha(byte[] scriptSha, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		throw new InvalidDataAccessApiUsageException("EvalSha is not supported in cluster environment.");
 	}
 
 	/*

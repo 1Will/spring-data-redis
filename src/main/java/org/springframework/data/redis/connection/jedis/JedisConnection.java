@@ -262,6 +262,15 @@ public class JedisConnection extends AbstractRedisConnection {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.data.redis.connection.RedisConnection#scriptingCommands()
+	 */
+	@Override
+	public RedisScriptingCommands scriptingCommands() {
+		return new JedisScriptingCommands(this);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.data.redis.connection.RedisConnection#serverCommands()
 	 */
 	@Override
@@ -773,137 +782,6 @@ public class JedisConnection extends AbstractRedisConnection {
 			subscription = new JedisSubscription(listener, jedisPubSub, channels, null);
 			jedis.subscribe(jedisPubSub, channels);
 
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	//
-	// Scripting commands
-	//
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptFlush()
-	 */
-	@Override
-	public void scriptFlush() {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			jedis.scriptFlush();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptKill()
-	 */
-	@Override
-	public void scriptKill() {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			jedis.scriptKill();
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptLoad(byte[])
-	 */
-	@Override
-	public String scriptLoad(byte[] script) {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			return JedisConverters.toString(jedis.scriptLoad(script));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#scriptExists(java.lang.String[])
-	 */
-	@Override
-	public List<Boolean> scriptExists(String... scriptSha1) {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			return jedis.scriptExists(scriptSha1);
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#eval(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> T eval(byte[] script, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			return (T) new JedisScriptReturnConverter(returnType)
-					.convert(jedis.eval(script, JedisConverters.toBytes(numKeys), keysAndArgs));
-		} catch (Exception ex) {
-			throw convertJedisAccessException(ex);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(java.lang.String, org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	public <T> T evalSha(String scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-		return evalSha(JedisConverters.toBytes(scriptSha1), returnType, numKeys, keysAndArgs);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.redis.connection.RedisScriptingCommands#evalSha(byte[], org.springframework.data.redis.connection.ReturnType, int, byte[][])
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> T evalSha(byte[] scriptSha1, ReturnType returnType, int numKeys, byte[]... keysAndArgs) {
-
-		if (isQueueing()) {
-			throw new UnsupportedOperationException();
-		}
-		if (isPipelined()) {
-			throw new UnsupportedOperationException();
-		}
-		try {
-			return (T) new JedisScriptReturnConverter(returnType).convert(jedis.evalsha(scriptSha1, numKeys, keysAndArgs));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
